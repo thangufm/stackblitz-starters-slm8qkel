@@ -7,7 +7,7 @@ export class Task {
         this.assignee = assignee;   // Người phụ trách
         this.deadline = deadline;
         this.status = status;       // 'DOING', 'DONE', 'LATE'
-        this.directive = directive; // Ý kiến chỉ đạo của BGĐ
+        this.directive = directive; // Ý kiến chỉ đạo của BGĐ55
     }
 
     // Cập nhật ý kiến chỉ đạo của BGĐ
