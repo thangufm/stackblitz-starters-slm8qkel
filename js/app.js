@@ -148,12 +148,14 @@ class TaskService {
         return list;
     }
 
-    addTask(title, dept, deptName, deadline, expectedProduct, assignee = '') {
-        const newId = Date.now();
-        const newTask = new Task(newId, title, dept, deptName, assignee || 'Chưa phân công', deadline, 'DOING', '', expectedProduct, []);
-        this.tasks.unshift(newTask);
+    // Thêm danh sách nhiều công việc cùng lúc
+    addMultipleTasks(taskList) {
+        taskList.forEach((t, idx) => {
+            const newId = Date.now() + idx;
+            const newTask = new Task(newId, t.title, t.dept, t.deptName, t.assignee || 'Chưa phân công', t.deadline, 'DOING', '', t.expectedProduct, []);
+            this.tasks.unshift(newTask);
+        });
         this.saveTasks();
-        return newTask;
     }
 
     assignTask(taskId, assignee, coWorkers) {
@@ -292,7 +294,7 @@ class App {
                             <p class="text-xs text-slate-500 mt-1">Theo dõi và quản lý danh sách công việc toàn Phân hiệu</p>
                         </div>
 
-                        <!-- 1. BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... -->
+                        <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... -->
                         <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
                             <span class="text-xs font-semibold text-slate-600 pl-1"><i class="fa-solid fa-calendar-days text-indigo-600 mr-1"></i> Lọc thời hạn:</span>
                             <input type="date" id="filter-start-date" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -303,9 +305,8 @@ class App {
                         </div>
                     </div>
 
-                    <!-- 2. MENU NÚT CHỌN LỌC PHÒNG BAN VÀ ĐĂNG KÝ MỚI -->
+                    <!-- MENU NÚT CHỌN LỌC PHÒNG BAN VÀ ĐĂNG KÝ MỚI -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-                        <!-- CÁC NÚT BẤM CHUYỂN PHÒNG BAN -->
                         <div class="flex items-center gap-2">
                             <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition">Tất Cả Phòng Ban</button>
                             <button data-dept="HC-TV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Hành Chính - Tài Vụ</button>
@@ -367,29 +368,48 @@ class App {
                 </div>
             </main>
 
-            <!-- MODAL ĐĂNG KÝ NHIỆM VỤ MỚI -->
+            <!-- MODAL ĐĂNG KÝ NHIỆM VỤ DẠNG BẢNG EXCEL DẠNG NHIỀU DÒNG -->
             <div id="modal-add-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-plus-circle text-emerald-600 mr-1.5"></i> Đăng Ký Nhiệm Vụ Mới Với BGĐ</h3>
-                        <button id="close-modal-add" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh]">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-file-excel text-emerald-600 text-lg"></i> Đăng Ký Công Việc Tuần Cho BGĐ
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Nhập nhiều đầu công việc theo dạng bảng tương tự Excel</p>
+                        </div>
+                        <button id="close-modal-add" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
                     </div>
-                    <form id="form-add-task" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tên đầu công việc <span class="text-rose-500">*</span></label>
-                            <textarea id="add-task-title" required rows="2" placeholder="Nhập tên đầu công việc tuần..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500"></textarea>
+
+                    <form id="form-add-task-grid" class="flex-1 overflow-y-auto pr-1">
+                        <div class="border border-slate-200 rounded-xl overflow-hidden mb-4">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold">
+                                        <th class="py-2.5 px-3 w-10 text-center">STT</th>
+                                        <th class="py-2.5 px-3">Tên đầu công việc <span class="text-rose-500">*</span></th>
+                                        <th class="py-2.5 px-3 w-1/3">Sản phẩm / Kết quả dự kiến</th>
+                                        <th class="py-2.5 px-3 w-40">Thời hạn hoàn thành <span class="text-rose-500">*</span></th>
+                                        <th class="py-2.5 px-3 w-12 text-center">Xóa</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="task-grid-rows" class="divide-y divide-slate-200 bg-white">
+                                    <!-- CÁC DÒNG SẼ ĐƯỢC TỰ ĐỘNG THÊM BẰNG JAVASCRIPT -->
+                                </tbody>
+                            </table>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Sản phẩm / Kết quả dự kiến</label>
-                            <input type="text" id="add-task-product" placeholder="Tờ trình, Báo cáo, Kế hoạch..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Thời hạn hoàn thành <span class="text-rose-500">*</span></label>
-                            <input type="date" id="add-task-deadline" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500">
-                        </div>
-                        <div class="flex justify-end gap-2 pt-2">
-                            <button type="button" id="btn-cancel-add" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">Hủy</button>
-                            <button type="submit" class="px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg shadow-sm">Gửi Đăng Ký</button>
+
+                        <div class="flex justify-between items-center">
+                            <button type="button" id="btn-add-grid-row" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg flex items-center gap-1.5 transition">
+                                <i class="fa-solid fa-plus text-emerald-600"></i> Thêm Dòng Công Việc
+                            </button>
+
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="btn-cancel-add" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">Hủy</button>
+                                <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-md transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-paper-plane"></i> Gửi Đăng Ký BGĐ
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -530,28 +550,101 @@ class App {
             }
         });
 
-        // Sự kiện Modal Đăng ký công việc
+        // ========================================================
+        // LOGIC BẢNG ĐĂNG KÝ CÔNG VIỆC DẠNG LƯỚI EXCEL
+        // ========================================================
         const modalAdd = document.getElementById('modal-add-task');
         const btnOpenAdd = document.getElementById('btn-open-add-task');
+        const gridTbody = document.getElementById('task-grid-rows');
+
+        const createGridRow = (stt) => {
+            const tr = document.createElement('tr');
+            tr.className = "grid-row hover:bg-slate-50/80 transition";
+            tr.innerHTML = `
+                <td class="py-2 px-3 text-center font-semibold text-slate-500 row-stt">${stt}</td>
+                <td class="py-2 px-2">
+                    <input type="text" class="row-title w-full px-2.5 py-1.5 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Nhập tên công việc..." required>
+                </td>
+                <td class="py-2 px-2">
+                    <input type="text" class="row-product w-full px-2.5 py-1.5 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Sản phẩm/Tờ trình...">
+                </td>
+                <td class="py-2 px-2">
+                    <input type="date" class="row-deadline w-full px-2.5 py-1.5 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
+                </td>
+                <td class="py-2 px-2 text-center">
+                    <button type="button" class="btn-remove-row text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can"></i></button>
+                </td>
+            `;
+
+            tr.querySelector('.btn-remove-row').addEventListener('click', () => {
+                if (gridTbody.children.length > 1) {
+                    tr.remove();
+                    // Cập nhật lại STT
+                    Array.from(gridTbody.children).forEach((r, idx) => {
+                        r.querySelector('.row-stt').innerText = idx + 1;
+                    });
+                } else {
+                    alert('Phải có ít nhất 1 dòng công việc!');
+                }
+            });
+
+            return tr;
+        };
+
+        const resetAndInitGrid = () => {
+            gridTbody.innerHTML = '';
+            // Khởi tạo sẵn 3 dòng mặc định
+            gridTbody.appendChild(createGridRow(1));
+            gridTbody.appendChild(createGridRow(2));
+            gridTbody.appendChild(createGridRow(3));
+        };
+
         if (btnOpenAdd) {
-            btnOpenAdd.addEventListener('click', () => modalAdd.classList.remove('hidden'));
+            btnOpenAdd.addEventListener('click', () => {
+                resetAndInitGrid();
+                modalAdd.classList.remove('hidden');
+            });
         }
+
+        document.getElementById('btn-add-grid-row').addEventListener('click', () => {
+            const nextStt = gridTbody.children.length + 1;
+            gridTbody.appendChild(createGridRow(nextStt));
+        });
+
         document.getElementById('close-modal-add').addEventListener('click', () => modalAdd.classList.add('hidden'));
         document.getElementById('btn-cancel-add').addEventListener('click', () => modalAdd.classList.add('hidden'));
 
-        document.getElementById('form-add-task').addEventListener('submit', (e) => {
+        // Xử lý nộp form đăng ký danh sách công việc
+        document.getElementById('form-add-task-grid').addEventListener('submit', (e) => {
             e.preventDefault();
-            const title = document.getElementById('add-task-title').value;
-            const product = document.getElementById('add-task-product').value;
-            const deadline = document.getElementById('add-task-deadline').value;
             
+            const rows = Array.from(gridTbody.querySelectorAll('.grid-row'));
+            const tasksToAdd = [];
             const deptId = user.deptId || 'HC-TV';
             const deptName = deptId === 'HC-TV' ? 'Hành chính - Tài vụ' : 'Đào tạo - KH & QLSV';
 
-            this.taskService.addTask(title, deptId, deptName, deadline, product, user.fullName);
-            modalAdd.classList.add('hidden');
-            document.getElementById('form-add-task').reset();
-            this.renderTaskTable(user);
+            rows.forEach(r => {
+                const title = r.querySelector('.row-title').value.trim();
+                const product = r.querySelector('.row-product').value.trim();
+                const deadline = r.querySelector('.row-deadline').value;
+
+                if (title && deadline) {
+                    tasksToAdd.push({
+                        title,
+                        expectedProduct: product,
+                        deadline,
+                        dept: deptId,
+                        deptName: deptName,
+                        assignee: user.fullName
+                    });
+                }
+            });
+
+            if (tasksToAdd.length > 0) {
+                this.taskService.addMultipleTasks(tasksToAdd);
+                modalAdd.classList.add('hidden');
+                this.renderTaskTable(user);
+            }
         });
 
         // Sự kiện Modal Giao việc
