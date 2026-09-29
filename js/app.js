@@ -223,6 +223,17 @@ class App {
         this.initUI();
     }
 
+    // Hàm bổ trợ chuyển đổi YYYY-MM-DD sang dd/mm/yy
+    formatDateShort(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const yearShort = parts[0].substring(2); // Lấy 2 số cuối năm (vd 2026 -> 26)
+            return `${parts[2]}/${parts[1]}/${yearShort}`; // dd/mm/yy
+        }
+        return dateStr;
+    }
+
     initUI() {
         const currentUser = this.authService.getCurrentUser();
         if (!currentUser) {
@@ -406,7 +417,7 @@ class App {
                                     <th class="py-3 px-4">Tên Công Việc / Kết Quả</th>
                                     <th class="py-3 px-4">Phòng Ban</th>
                                     <th class="py-3 px-4">Chủ Trì & Phối Hợp</th>
-                                    <th class="py-3 px-4">Thời Hạn</th>
+                                    <th class="py-3 px-4 whitespace-nowrap">Thời Hạn</th>
                                     <th class="py-3 px-4">Trạng Thái & Minh Chứng</th>
                                     <th class="py-3 px-4 text-center">Thao Tác</th>
                                 </tr>
@@ -558,7 +569,6 @@ class App {
             </div>
         `;
 
-        // Ban Giám đốc sẽ mặc định chọn Tab "ALL" (Tất cả phòng ban)
         this.currentDept = isBGD ? 'ALL' : 'MY_TASKS';
 
         this.bindEvents(user);
@@ -875,23 +885,26 @@ class App {
                 actionBtnHtml = `<span class="text-slate-400 text-xs italic">Xem</span>`;
             }
 
+            // ĐỊNH DẠNG NGÀY HIỂN THỊ DẠNG dd/mm/yy & GIỮ TRÊN 1 DÒNG (whitespace-nowrap)
+            const formattedDeadline = this.formatDateShort(task.deadline);
+
             tr.innerHTML = `
                 <td class="py-3.5 px-4 font-medium text-slate-900">
                     <div>${task.title}</div>
                     ${task.expectedProduct ? `<div class="text-xs text-slate-500 font-normal mt-0.5"><i class="fa-solid fa-box-archive mr-1"></i><b>Sản phẩm:</b> ${task.expectedProduct}</div>` : ''}
                     ${task.directive ? `<div class="text-xs text-indigo-700 mt-1 bg-indigo-50 p-1.5 rounded border border-indigo-100"><i class="fa-solid fa-bullhorn mr-1"></i><b>Lãnh đạo Chỉ đạo:</b> ${task.directive}</div>` : ''}
                 </td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border">${task.deptName}</span></td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border whitespace-nowrap">${task.deptName}</span></td>
                 <td class="py-3.5 px-4">
                     <div class="font-semibold text-slate-800">${task.assignee}</div>
                     ${coWorkerText}
                 </td>
-                <td class="py-3.5 px-4 font-medium ${task.status === 'LATE' ? 'text-rose-600' : 'text-slate-700'}">${task.deadline}</td>
+                <td class="py-3.5 px-4 font-medium whitespace-nowrap ${task.status === 'LATE' ? 'text-rose-600' : 'text-slate-700'}">${formattedDeadline}</td>
                 <td class="py-3.5 px-4">
                     <div>${statusBadge}</div>
                     ${proofHtml}
                 </td>
-                <td class="py-3.5 px-4 text-center">${actionBtnHtml}</td>
+                <td class="py-3.5 px-4 text-center whitespace-nowrap">${actionBtnHtml}</td>
             `;
 
             if (isBGD && tr.querySelector('.btn-directive')) {
