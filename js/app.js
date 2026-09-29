@@ -236,7 +236,7 @@ class App {
                     <form id="login-form" class="space-y-5">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Email UFM</label>
-                            <input type="email" id="login-email" required placeholder="vovanthao@ufm.edu.vn" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="email" id="login-email" required placeholder="tranthibichlien@ufm.edu.vn" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Mật khẩu</label>
@@ -781,23 +781,35 @@ class App {
                 ? `<div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-users text-indigo-500 mr-1"></i> <b>Phối hợp:</b> ${task.coWorkers.join(', ')}</div>`
                 : '';
 
-            const isAssignedToMe = task.assignee.includes(user.fullName) || (task.coWorkers && task.coWorkers.some(cw => cw.includes(user.fullName)));
-
-            // RÀNG BUỘC PHÂN QUYỀN GIAO VIỆC:
-            // Trưởng/Phó phòng CHỈ được giao việc khi công việc đó thuộc ĐÚNG phòng ban của mình (hoặc là Super Admin)
+            // KIỂM TRA ĐIỀU KIỆN VAI TRÒ
             const canManageThisTask = isManager && (user.role === 'SUPER_ADMIN' || user.deptId === task.dept);
+            
+            // Lãnh đạo phòng có đang trực tiếp phụ trách hay không? (Assignee chứa tên Trưởng/Phó phòng)
+            const isManagerDirectlyAssigned = task.assignee.includes(user.fullName);
+
+            // Nhân viên bình thường có được giao việc hay không
+            const isStaffAssignedToMe = !isManager && (task.assignee.includes(user.fullName) || (task.coWorkers && task.coWorkers.some(cw => cw.includes(user.fullName))));
 
             let actionBtnHtml = '';
+
             if (isBGD) {
                 actionBtnHtml = `<button class="btn-directive text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-comment-dots mr-1"></i> Cho chỉ đạo</button>`;
             } else if (canManageThisTask) {
-                actionBtnHtml = `
-                    <div class="flex items-center justify-center gap-1.5">
-                        <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md text-xs font-medium" title="Giao việc cho nhân viên phòng"><i class="fa-solid fa-user-plus mr-1"></i> Giao việc</button>
-                        <button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md text-xs font-medium" title="Cập nhật minh chứng"><i class="fa-solid fa-pen-to-square"></i></button>
-                    </div>
-                `;
-            } else if (isAssignedToMe) {
+                // NẾU CÔNG VIỆC DO CHÍNH TRƯỞNG/PHÓ PHÒNG ĐỨNG TÊN PHỤ TRÁCH: Cho phép cả Giao việc LẪN Cập nhật minh chứng
+                if (isManagerDirectlyAssigned) {
+                    actionBtnHtml = `
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md text-xs font-medium" title="Phân công cho nhân viên"><i class="fa-solid fa-user-plus mr-1"></i> Giao việc</button>
+                            <button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md text-xs font-medium" title="Báo cáo / Minh chứng cá nhân"><i class="fa-solid fa-pen-to-square mr-1"></i> Minh chứng</button>
+                        </div>
+                    `;
+                } else {
+                    // NẾU ĐÃ GIAO CHO NHÂN VIÊN RỒI: Ẩn nút Cập nhật minh chứng của Trưởng phòng, chỉ để nút Giao việc
+                    actionBtnHtml = `
+                        <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md text-xs font-medium" title="Điều chỉnh người giao việc"><i class="fa-solid fa-user-plus mr-1"></i> Giao việc</button>
+                    `;
+                }
+            } else if (isStaffAssignedToMe) {
                 actionBtnHtml = `<button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-pen-to-square mr-1"></i> Báo cáo / Minh chứng</button>`;
             } else {
                 actionBtnHtml = `<span class="text-slate-400 text-xs italic">Xem</span>`;
@@ -833,14 +845,13 @@ class App {
                 });
             }
 
-            // Nút Trưởng phòng giao việc (RÀNG BUỘC CHỈ ĐỔ DÒNG NHÂN SỰ THUỘC ĐÚNG PHÒNG ĐÓ)
+            // Nút Trưởng phòng giao việc
             if (canManageThisTask && tr.querySelector('.btn-assign')) {
                 tr.querySelector('.btn-assign').addEventListener('click', () => {
                     const modalAssign = document.getElementById('modal-assign-task');
                     document.getElementById('assign-task-id').value = task.id;
                     document.getElementById('assign-task-title-display').innerText = task.title;
 
-                    // Chỉ lấy danh sách nhân viên thuộc ĐÚNG phòng ban của công việc đó
                     const deptUsers = this.authService.getUsersByDept(task.dept);
                     const selectMain = document.getElementById('assign-main-user');
                     const selectCo = document.getElementById('assign-coworkers');
@@ -866,7 +877,7 @@ class App {
                 });
             }
 
-            // Nút Cập nhật tiến độ & Minh chứng
+            // Nút Cập nhật tiến độ & Minh chứng (Cho Nhân viên hoặc Trưởng phòng trực tiếp phụ trách)
             if (tr.querySelector('.btn-update-proof')) {
                 tr.querySelector('.btn-update-proof').addEventListener('click', () => {
                     const modalUpdate = document.getElementById('modal-update-task');
