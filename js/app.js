@@ -93,13 +93,13 @@ class Task {
         this.title = title;
         this.dept = dept;
         this.deptName = deptName;
-        this.assignee = assignee;         // Người chủ trì chính
-        this.coWorkers = coWorkers;       // Danh sách người phối hợp (Mảng tên)
-        this.deadline = deadline;         // YYYY-MM-DD
-        this.status = status;             // 'REGISTERED', 'DOING', 'DONE', 'LATE'
-        this.directive = directive;       // Chỉ đạo BGĐ / Lãnh đạo
+        this.assignee = assignee;         
+        this.coWorkers = coWorkers;       
+        this.deadline = deadline;         
+        this.status = status;             // 'WAITING_ASSIGN', 'DOING', 'DONE', 'LATE'
+        this.directive = directive;       
         this.expectedProduct = expectedProduct; 
-        this.proofUrl = proofUrl;         // Link đính kèm minh chứng
+        this.proofUrl = proofUrl;         
         this.proofNote = proofNote;       
     }
 
@@ -110,8 +110,7 @@ class Task {
     assignTask(assignee, coWorkers = []) {
         this.assignee = assignee;
         this.coWorkers = coWorkers;
-        // Nếu đang ở trạng thái 'Mới đăng ký', khi giao việc sẽ chuyển sang 'Đang thực hiện'
-        if (this.status === 'REGISTERED') {
+        if (this.status === 'WAITING_ASSIGN') {
             this.status = 'DOING';
         }
     }
@@ -134,9 +133,10 @@ class TaskService {
                 new Task(1, 'Báo cáo kiểm kê tài sản & hạ tầng CNTT Quý 3/2026', 'HC-TV', 'Hành chính - Tài vụ', 'Trần Thị Bích Liên (Trưởng Phòng)', '2026-09-30', 'LATE', '', 'Bảng tổng hợp kiểm kê', ['Phạm Ngọc Thắng', 'Đinh Thanh Hà']),
                 new Task(2, 'Triển khai bảo trì hệ thống mạng máy tính phòng họp', 'HC-TV', 'Hành chính - Tài vụ', 'Đinh Thanh Hà (Kỹ sư)', '2026-10-02', 'DOING', '', 'Mạng ổn định', ['Bùi Trần Quyết Thắng']),
                 new Task(3, 'Thanh toán chi phí điện nước và dịch vụ vệ sinh tháng 9', 'HC-TV', 'Hành chính - Tài vụ', 'Huỳnh Thị Anh Tùng (Kế toán viên)', '2026-09-29', 'DONE', '', 'Hóa đơn chứng từ', [], 'https://drive.google.com/file/d/sample_bill', 'Đã chuyển kế toán duyệt'),
-                new Task(4, 'Lập danh sách sinh viên xét học bổng học kỳ 1', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Phạm Hoài Nam (Trưởng phòng)', '2026-10-03', 'DOING', '', 'Danh sách SV đạt chuẩn', ['Võ Văn Thảo', 'Tạ Thị Quỳnh Ngọc']),
-                new Task(5, 'Cập nhật thời khóa biểu bổ sung cho các lớp buổi tối', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Tạ Thị Quỳnh Ngọc (Chuyên viên chính)', '2026-10-01', 'REGISTERED', '', 'TKB công bố trên web', []),
-                new Task(6, 'Tổng hợp đề xuất đề tài nghiên cứu khoa học cấp cơ sở', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Huỳnh Ngọc Nghiêm (Phó Trưởng phòng)', '2026-09-28', 'LATE', '', 'Danh mục đề tài KH', ['Lê Thị Tuyết Dung'])
+                new Task(4, 'Đề xuất trang bị máy chiếu mới cho phòng máy 02 (Mới đề xuất)', 'HC-TV', 'Hành chính - Tài vụ', 'Đinh Thanh Hà (Kỹ sư)', '2026-10-05', 'WAITING_ASSIGN', '', 'Tờ trình đề xuất trang bị', []),
+                new Task(5, 'Lập danh sách sinh viên xét học bổng học kỳ 1', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Phạm Hoài Nam (Trưởng phòng)', '2026-10-03', 'DOING', '', 'Danh sách SV đạt chuẩn', ['Võ Văn Thảo', 'Tạ Thị Quỳnh Ngọc']),
+                new Task(6, 'Cập nhật thời khóa biểu bổ sung cho các lớp buổi tối', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Tạ Thị Quỳnh Ngọc (Chuyên viên chính)', '2026-10-01', 'DONE', '', 'TKB công bố trên web', []),
+                new Task(7, 'Đăng ký tập huấn công tác PCCC Phân hiệu năm 2026', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Võ Văn Thảo (Chuyên viên)', '2026-10-06', 'WAITING_ASSIGN', '', 'Kế hoạch tổ chức PCCC', [])
             ];
             this.saveTasks();
         }
@@ -161,9 +161,18 @@ class TaskService {
         return list;
     }
 
-    addMultipleTasks(taskList, initialStatus = 'DOING') {
+    // Đếm số lượng công việc chưa giao theo từng phòng ban
+    getUnassignedCountByDept(deptCode) {
+        if (deptCode === 'ALL') {
+            return this.tasks.filter(t => t.status === 'WAITING_ASSIGN').length;
+        }
+        return this.tasks.filter(t => t.dept === deptCode && t.status === 'WAITING_ASSIGN').length;
+    }
+
+    addMultipleTasks(taskList, isStaffCreator = false) {
         taskList.forEach((t, idx) => {
             const newId = Date.now() + idx;
+            const initialStatus = isStaffCreator ? 'WAITING_ASSIGN' : 'DOING';
             const newTask = new Task(newId, t.title, t.dept, t.deptName, t.assignee || 'Chưa phân công', t.deadline, initialStatus, '', t.expectedProduct, []);
             this.tasks.unshift(newTask);
         });
@@ -279,7 +288,7 @@ class App {
             ? `<div class="text-xs text-amber-300 font-medium"><i class="fa-solid fa-crown text-[10px]"></i> ${user.position} (Super Admin)</div>`
             : `<div class="text-xs text-indigo-200 font-medium"><i class="fa-solid fa-user-tie text-[10px]"></i> ${user.position}</div>`;
 
-        const btnRegisterText = isManager ? 'Đăng Ký Nhiệm Vụ Với BGĐ' : 'Đăng Ký Nhiệm Vụ Với Lãnh Đạo Phòng';
+        const btnRegisterText = isManager ? 'Đăng Ký Nhiệm Vụ Với BGĐ' : 'Đăng Ký Nhiệm Vụ Tuần Mới';
 
         appContainer.innerHTML = `
             <!-- HEADER -->
@@ -315,7 +324,7 @@ class App {
                             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <i class="fa-solid fa-chart-line text-indigo-600"></i> Bảng Điều Khiển Tổng Quan Công Việc
                             </h2>
-                            <p class="text-xs text-slate-500 mt-1">Theo dõi, đăng ký công việc và cập nhật minh chứng kết quả</p>
+                            <p class="text-xs text-slate-500 mt-1">Theo dõi, giao việc và cập nhật tiến độ minh chứng</p>
                         </div>
 
                         <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... -->
@@ -331,13 +340,25 @@ class App {
 
                     <!-- TAB DÂN CƯ VÀ NÚT ĐĂNG KÝ CÔNG VIỆC -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-                        <div class="flex items-center gap-2 overflow-x-auto pb-1">
-                            <button data-dept="MY_TASKS" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5">
+                        <div class="flex items-center gap-2.5 overflow-x-auto pb-1">
+                            <button data-dept="MY_TASKS" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5 relative">
                                 <i class="fa-solid fa-user-check"></i> Công Việc Của Tôi
                             </button>
-                            <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Tất Cả Phòng Ban</button>
-                            <button data-dept="HC-TV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Hành Chính - Tài Vụ</button>
-                            <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Đào Tạo - KH & QLSV</button>
+                            
+                            <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1.5 relative">
+                                Tất Cả Phòng Ban
+                                <span id="badge-dept-ALL" class="hidden px-1.5 py-0.5 text-[10px] font-bold bg-rose-500 text-white rounded-full shadow-sm">0</span>
+                            </button>
+
+                            <button data-dept="HC-TV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1.5 relative">
+                                Hành Chính - Tài Vụ
+                                <span id="badge-dept-HC-TV" class="hidden px-1.5 py-0.5 text-[10px] font-bold bg-rose-500 text-white rounded-full shadow-sm">0</span>
+                            </button>
+
+                            <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1.5 relative">
+                                Đào Tạo - KH & QLSV
+                                <span id="badge-dept-DT-QLSV" class="hidden px-1.5 py-0.5 text-[10px] font-bold bg-rose-500 text-white rounded-full shadow-sm">0</span>
+                            </button>
                         </div>
 
                         <button id="btn-open-add-task" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center gap-1.5 transition">
@@ -438,7 +459,7 @@ class App {
                             <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
                                 <i class="fa-solid fa-file-excel text-emerald-600 text-lg"></i> ${btnRegisterText}
                             </h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Nhập danh sách công việc cá nhân/đơn vị đăng ký thực hiện trong tuần</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Nhập danh sách công việc đăng ký thực hiện trong tuần</p>
                         </div>
                         <button id="close-modal-add" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
                     </div>
@@ -479,7 +500,7 @@ class App {
             <div id="modal-assign-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-user-check text-indigo-600 mr-1.5"></i> Duyệt & Phân Công Nhiệm Vụ</h3>
+                        <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-user-check text-indigo-600 mr-1.5"></i> Phê Duyệt & Phân Công Nhiệm Vụ</h3>
                         <button id="close-modal-assign" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                     </div>
                     <form id="form-assign-task" class="space-y-4">
@@ -489,7 +510,7 @@ class App {
                             <p id="assign-task-title-display" class="text-xs font-bold text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200"></p>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Người chủ trì / Phụ trách chính <span class="text-rose-500">*</span></label>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Người phụ trách / Chủ trì chính <span class="text-rose-500">*</span></label>
                             <select id="assign-main-user" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500"></select>
                         </div>
                         <div>
@@ -498,7 +519,7 @@ class App {
                         </div>
                         <div class="flex justify-end gap-2 pt-2">
                             <button type="button" id="btn-cancel-assign" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">Hủy</button>
-                            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm">Lưu Phân Công</button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg shadow-sm">Duyệt & Giao Việc</button>
                         </div>
                     </form>
                 </div>
@@ -540,15 +561,30 @@ class App {
         this.renderTaskTable(user);
     }
 
+    updateDeptBadges() {
+        ['ALL', 'HC-TV', 'DT-QLSV'].forEach(deptCode => {
+            const count = this.taskService.getUnassignedCountByDept(deptCode);
+            const badgeEl = document.getElementById(`badge-dept-${deptCode}`);
+            if (badgeEl) {
+                if (count > 0) {
+                    badgeEl.innerText = count;
+                    badgeEl.classList.remove('hidden');
+                } else {
+                    badgeEl.classList.add('hidden');
+                }
+            }
+        });
+    }
+
     bindEvents(user) {
         // Lắng nghe Lọc Phòng Ban / Công Việc CỦA TÔI
         document.querySelectorAll('.dept-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.dept-btn').forEach(b => {
-                    b.className = "dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1.5";
+                    b.className = "dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1.5 relative";
                 });
                 const targetBtn = e.currentTarget;
-                targetBtn.className = "dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5";
+                targetBtn.className = "dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5 relative";
                 
                 this.currentDept = targetBtn.getAttribute('data-dept');
                 this.renderTaskTable(user);
@@ -679,11 +715,8 @@ class App {
             const deptId = user.deptId || 'HC-TV';
             const deptName = deptId === 'HC-TV' ? 'Hành chính - Tài vụ' : 'Đào tạo - KH & QLSV';
 
+            const isStaff = user.role === 'STAFF';
             const assigneeName = `${user.fullName} (${user.position})`;
-
-            // NẾU LÀ NHÂN VIÊN ĐĂNG KÝ: Trạng thái ban đầu là 'REGISTERED' (Mới đăng ký)
-            // NẾU LÀ TRƯỞNG PHÒNG ĐĂNG KÝ: Trạng thái ban đầu là 'DOING' (Đã duyệt)
-            const initialStatus = user.role === 'STAFF' ? 'REGISTERED' : 'DOING';
 
             rows.forEach(r => {
                 const title = r.querySelector('.row-title').value.trim();
@@ -703,7 +736,7 @@ class App {
             });
 
             if (tasksToAdd.length > 0) {
-                this.taskService.addMultipleTasks(tasksToAdd, initialStatus);
+                this.taskService.addMultipleTasks(tasksToAdd, isStaff);
                 modalAdd.classList.add('hidden');
                 this.renderTaskTable(user);
             }
@@ -746,6 +779,9 @@ class App {
     }
 
     renderTaskTable(user) {
+        // Cập nhật số đếm đỏ trên các Tab Phòng Ban
+        this.updateDeptBadges();
+
         const tbody = document.getElementById('task-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -771,10 +807,9 @@ class App {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50/80 transition";
 
-            // TRẠNG THÁI HIỂN THỊ BADGE (Bổ sung trạng thái 'Mới đăng ký')
             let statusBadge = '';
-            if (task.status === 'REGISTERED') {
-                statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"><i class="fa-solid fa-file-circle-plus mr-1"></i> Mới Đăng Ký</span>`;
+            if (task.status === 'WAITING_ASSIGN') {
+                statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700"><i class="fa-solid fa-clock mr-1"></i> Mới đăng ký</span>`;
             } else if (task.status === 'LATE') {
                 statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Trễ Hạn</span>`;
             } else if (task.status === 'DOING') {
@@ -804,25 +839,23 @@ class App {
             if (isBGD) {
                 actionBtnHtml = `<button class="btn-directive text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-comment-dots mr-1"></i> Cho chỉ đạo</button>`;
             } else if (canManageThisTask) {
-                // Tên nút thay đổi linh hoạt: Nếu mới đăng ký -> "Duyệt & Giao việc", Nếu đã phân công -> "Giao việc"
-                const assignBtnLabel = task.status === 'REGISTERED' ? 'Duyệt & Giao việc' : 'Giao việc';
-
-                if (isManagerDirectlyAssigned) {
+                const btnLabel = task.status === 'WAITING_ASSIGN' ? 'Phê duyệt & Giao việc' : 'Giao việc';
+                
+                if (isManagerDirectlyAssigned && task.status !== 'WAITING_ASSIGN') {
                     actionBtnHtml = `
                         <div class="flex items-center justify-center gap-1.5">
-                            <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md text-xs font-medium" title="Phân công cho nhân viên"><i class="fa-solid fa-user-plus mr-1"></i> ${assignBtnLabel}</button>
-                            <button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md text-xs font-medium" title="Báo cáo / Minh chứng cá nhân"><i class="fa-solid fa-pen-to-square mr-1"></i> Minh chứng</button>
+                            <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md text-xs font-medium" title="Phân công nhân viên"><i class="fa-solid fa-user-plus mr-1"></i> ${btnLabel}</button>
+                            <button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md text-xs font-medium" title="Minh chứng"><i class="fa-solid fa-pen-to-square mr-1"></i> Minh chứng</button>
                         </div>
                     `;
                 } else {
                     actionBtnHtml = `
-                        <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md text-xs font-medium" title="Điều chỉnh người giao việc"><i class="fa-solid fa-user-plus mr-1"></i> ${assignBtnLabel}</button>
+                        <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-user-plus mr-1"></i> ${btnLabel}</button>
                     `;
                 }
             } else if (isStaffAssignedToMe) {
-                // Nếu công việc mới đăng ký và chưa được sếp duyệt thì ẩn nút nộp minh chứng
-                if (task.status === 'REGISTERED') {
-                    actionBtnHtml = `<span class="text-blue-500 text-xs italic font-medium">Chờ Lãnh đạo duyệt</span>`;
+                if (task.status === 'WAITING_ASSIGN') {
+                    actionBtnHtml = `<span class="text-sky-600 text-xs italic"><i class="fa-solid fa-hourglass-half mr-1"></i> Chờ Trưởng phòng duyệt</span>`;
                 } else {
                     actionBtnHtml = `<button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-pen-to-square mr-1"></i> Báo cáo / Minh chứng</button>`;
                 }
@@ -849,7 +882,6 @@ class App {
                 <td class="py-3.5 px-4 text-center">${actionBtnHtml}</td>
             `;
 
-            // Nút BGĐ chỉ đạo
             if (isBGD && tr.querySelector('.btn-directive')) {
                 tr.querySelector('.btn-directive').addEventListener('click', () => {
                     const directive = prompt(`Nhập ý kiến chỉ đạo của BGĐ cho:\n"${task.title}"`);
@@ -860,7 +892,6 @@ class App {
                 });
             }
 
-            // Nút Trưởng phòng Duyệt & Giao việc
             if (canManageThisTask && tr.querySelector('.btn-assign')) {
                 tr.querySelector('.btn-assign').addEventListener('click', () => {
                     const modalAssign = document.getElementById('modal-assign-task');
@@ -892,7 +923,6 @@ class App {
                 });
             }
 
-            // Nút Cập nhật tiến độ & Minh chứng
             if (tr.querySelector('.btn-update-proof')) {
                 tr.querySelector('.btn-update-proof').addEventListener('click', () => {
                     const modalUpdate = document.getElementById('modal-update-task');
