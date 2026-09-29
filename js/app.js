@@ -146,7 +146,7 @@ class TaskService {
         localStorage.setItem('ufm_tasks', JSON.stringify(this.tasks));
     }
 
-    getTasks(deptCode = 'ALL', startDate = '', endDate = '', userFullName = '') {
+    getTasks(deptCode = 'ALL', startDate = '', endDate = '', userFullName = '', selectedStaff = 'ALL') {
         let list = this.tasks;
         
         if (deptCode === 'MY_TASKS' && userFullName) {
@@ -157,6 +157,10 @@ class TaskService {
 
         if (startDate) list = list.filter(t => t.deadline >= startDate);
         if (endDate) list = list.filter(t => t.deadline <= endDate);
+
+        if (selectedStaff && selectedStaff !== 'ALL') {
+            list = list.filter(t => t.assignee.includes(selectedStaff));
+        }
 
         return list;
     }
@@ -219,6 +223,7 @@ class App {
         this.currentDept = 'ALL';
         this.startDate = '';
         this.endDate = '';
+        this.selectedStaff = 'ALL';
 
         this.initUI();
     }
@@ -299,6 +304,18 @@ class App {
 
         const btnRegisterText = isManager ? 'Đăng Ký Nhiệm Vụ Với BGĐ' : 'Đăng Ký Nhiệm Vụ Tuần Mới';
 
+        let staffFilterHtml = '';
+        if (isManager || isBGD) {
+            staffFilterHtml = `
+                <div id="staff-filter-container" class="hidden items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                    <span class="text-xs font-semibold text-slate-600 pl-1"><i class="fa-solid fa-user text-indigo-600 mr-1"></i> Nhân viên:</span>
+                    <select id="filter-staff-select" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="ALL">-- Tất cả nhân viên --</option>
+                    </select>
+                </div>
+            `;
+        }
+
         appContainer.innerHTML = `
             <!-- HEADER -->
             <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-30">
@@ -336,18 +353,22 @@ class App {
                             <p class="text-xs text-slate-500 mt-1">Theo dõi, giao việc và cập nhật tiến độ minh chứng</p>
                         </div>
 
-                        <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... & NÚT XUẤT EXCEL -->
-                        <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                            <span class="text-xs font-semibold text-slate-600 pl-1"><i class="fa-solid fa-calendar-days text-indigo-600 mr-1"></i> Lọc thời hạn:</span>
-                            <input type="date" id="filter-start-date" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                            <span class="text-xs text-slate-400">đến</span>
-                            <input type="date" id="filter-end-date" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                            <button id="btn-apply-date" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm transition">Lọc</button>
-                            <button id="btn-clear-date" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-medium rounded-lg transition">Tất cả</button>
-                            
-                            <!-- NÚT XUẤT EXCEL -->
-                            <button id="btn-export-excel" class="ml-2 px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Xuất danh sách công việc ra Excel theo thời gian đã chọn">
-                                <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                        <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... & LỌC NHÂN VIÊN & NÚT XUẤT EXCEL 3 CỘT -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                <span class="text-xs font-semibold text-slate-600 pl-1"><i class="fa-solid fa-calendar-days text-indigo-600 mr-1"></i> Lọc thời hạn:</span>
+                                <input type="date" id="filter-start-date" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <span class="text-xs text-slate-400">đến</span>
+                                <input type="date" id="filter-end-date" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <button id="btn-apply-date" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm transition">Lọc</button>
+                                <button id="btn-clear-date" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-medium rounded-lg transition">Tất cả</button>
+                            </div>
+
+                            ${staffFilterHtml}
+
+                            <!-- NÚT XUẤT EXCEL 3 CỘT -->
+                            <button id="btn-export-excel" class="px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5" title="Xuất báo cáo 3 cột ra Excel">
+                                <i class="fa-solid fa-file-excel text-sm"></i> Xuất Excel (3 Cột)
                             </button>
                         </div>
                     </div>
@@ -576,7 +597,36 @@ class App {
         this.currentDept = isBGD ? 'ALL' : 'MY_TASKS';
 
         this.bindEvents(user);
+        this.updateStaffFilterDropdown(user);
         this.renderTaskTable(user);
+    }
+
+    updateStaffFilterDropdown(user) {
+        const isBGD = user.role === 'ADMIN_BGD' || user.position.includes('Giám đốc') || user.position.includes('Phó Giám đốc');
+        const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
+        const staffFilterContainer = document.getElementById('staff-filter-container');
+        const staffSelect = document.getElementById('filter-staff-select');
+
+        if (!staffFilterContainer || !staffSelect) return;
+
+        if (this.currentDept === 'HC-TV' || this.currentDept === 'DT-QLSV') {
+            staffFilterContainer.classList.remove('hidden');
+            staffFilterContainer.classList.add('flex');
+
+            const usersInDept = this.authService.getUsersByDept(this.currentDept);
+            staffSelect.innerHTML = `<option value="ALL">-- Tất cả nhân viên (${usersInDept.length}) --</option>`;
+            usersInDept.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.fullName;
+                opt.innerText = `${u.fullName} - ${u.position}`;
+                if (this.selectedStaff === u.fullName) opt.selected = true;
+                staffSelect.appendChild(opt);
+            });
+        } else {
+            staffFilterContainer.classList.add('hidden');
+            staffFilterContainer.classList.remove('flex');
+            this.selectedStaff = 'ALL';
+        }
     }
 
     updateDeptBadges() {
@@ -595,7 +645,6 @@ class App {
     }
 
     bindEvents(user) {
-        // Lắng nghe Lọc Phòng Ban
         document.querySelectorAll('.dept-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.dept-btn').forEach(b => {
@@ -605,11 +654,21 @@ class App {
                 targetBtn.className = "dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5 relative";
                 
                 this.currentDept = targetBtn.getAttribute('data-dept');
+                this.selectedStaff = 'ALL';
+                
+                this.updateStaffFilterDropdown(user);
                 this.renderTaskTable(user);
             });
         });
 
-        // Lắng nghe Lọc ngày
+        const staffSelect = document.getElementById('filter-staff-select');
+        if (staffSelect) {
+            staffSelect.addEventListener('change', (e) => {
+                this.selectedStaff = e.target.value;
+                this.renderTaskTable(user);
+            });
+        }
+
         document.getElementById('btn-apply-date').addEventListener('click', () => {
             this.startDate = document.getElementById('filter-start-date').value;
             this.endDate = document.getElementById('filter-end-date').value;
@@ -624,12 +683,11 @@ class App {
             this.renderTaskTable(user);
         });
 
-        // LẮNG NGHE SỰ KIỆN XUẤT EXCEL
+        // XUẤT EXCEL CHUẨN XÁC 3 CỘT
         document.getElementById('btn-export-excel').addEventListener('click', () => {
-            this.exportTasksToExcel(user);
+            this.exportTasksToExcel3Columns(user);
         });
 
-        // Đăng xuất & Đổi pass
         document.getElementById('btn-logout').addEventListener('click', () => {
             this.authService.logout();
             this.initUI();
@@ -671,7 +729,6 @@ class App {
             }
         });
 
-        // LOGIC BẢNG ĐĂNG KÝ CÔNG VIỆC DẠNG LƯỚI EXCEL
         const modalAdd = document.getElementById('modal-add-task');
         const btnOpenAdd = document.getElementById('btn-open-add-task');
         const gridTbody = document.getElementById('task-grid-rows');
@@ -774,7 +831,6 @@ class App {
             });
         }
 
-        // Sự kiện Modal Giao việc
         const modalAssign = document.getElementById('modal-assign-task');
         document.getElementById('close-modal-assign').addEventListener('click', () => modalAssign.classList.add('hidden'));
         document.getElementById('btn-cancel-assign').addEventListener('click', () => modalAssign.classList.add('hidden'));
@@ -792,7 +848,6 @@ class App {
             this.renderTaskTable(user);
         });
 
-        // Sự kiện Modal Báo cáo tiến độ & Minh chứng
         const modalUpdate = document.getElementById('modal-update-task');
         document.getElementById('close-modal-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
         document.getElementById('btn-cancel-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
@@ -810,34 +865,40 @@ class App {
         });
     }
 
-    // XUẤT RA EXCEL (CSV)
-    exportTasksToExcel(user) {
-        const tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName);
+    exportTasksToExcel3Columns(user) {
+        const tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
         if (tasks.length === 0) {
-            alert('Không có dữ liệu công việc trong khoảng thời gian và bộ lọc hiện tại để xuất Excel!');
+            alert('Không có dữ liệu công việc phù hợp với bộ lọc hiện tại để xuất Excel!');
             return;
         }
 
-        let csvContent = "\uFEFF"; // BOM để Excel nhận diện đúng UTF-8 (tiếng Việt có dấu)
-        csvContent += "STT,Thời gian (Thời hạn),Họ và tên (Chủ trì),Tên công việc,Trạng thái\r\n";
+        let csvContent = "\uFEFF"; 
+        csvContent += "Từ ngày đến ngày,Họ và Tên,Công việc\r\n";
 
-        tasks.forEach((t, index) => {
-            const stt = index + 1;
-            const timeStr = t.deadline || '';
-            // Tách lấy Họ tên chính (bỏ phần chức vụ trong ngoặc nếu cần, hoặc để nguyên)
-            const assigneeStr = `"${(t.assignee || '').replace(/"/g, '""')}"`;
-            const titleStr = `"${(t.title || '').replace(/"/g, '""')}"`;
-            const statusStr = t.status === 'DONE' ? 'Hoàn thành' : (t.status === 'DOING' ? 'Đang làm' : (t.status === 'LATE' ? 'Trễ hạn' : 'Mới đăng ký'));
+        const timeRangeLabel = (this.startDate && this.endDate) 
+            ? `${this.formatDateShort(this.startDate)} đến ${this.formatDateShort(this.endDate)}` 
+            : 'Tất cả thời gian';
 
-            csvContent += `${stt},${timeStr},${assigneeStr},${titleStr},${statusStr}\r\n`;
+        tasks.forEach(t => {
+            const timeCol = `"${timeRangeLabel}"`;
+            
+            let rawAssignee = t.assignee || '';
+            const idxOpenParen = rawAssignee.indexOf('(');
+            if (idxOpenParen !== -1) {
+                rawAssignee = rawAssignee.substring(0, idxOpenParen).trim();
+            }
+            const nameCol = `"${rawAssignee.replace(/"/g, '""')}"`;
+            const taskCol = `"${(t.title || '').replace(/"/g, '""')}"`;
+
+            csvContent += `${timeCol},${nameCol},${taskCol}\r\n`;
         });
 
         const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
         
-        const timeLabel = (this.startDate && this.endDate) ? `_${this.startDate}_den_${this.endDate}` : '_tat_ca';
-        link.setAttribute("download", `Bao_cao_cong_viec${timeLabel}.csv`);
+        const staffLabel = this.selectedStaff !== 'ALL' ? `_${this.selectedStaff.replace(/\s+/g, '_')}` : '_Tat_ca';
+        link.setAttribute("download", `Bao_cao_3_cot${staffLabel}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -853,9 +914,8 @@ class App {
         const isBGD = user.role === 'ADMIN_BGD' || user.position.includes('Giám đốc') || user.position.includes('Phó Giám đốc');
         const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
 
-        let tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName);
+        let tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
 
-        // Thống kê
         document.getElementById('stat-total').innerText = tasks.length;
         document.getElementById('stat-doing').innerText = tasks.filter(t => t.status === 'DOING').length;
         document.getElementById('stat-done').innerText = tasks.filter(t => t.status === 'DONE').length;
