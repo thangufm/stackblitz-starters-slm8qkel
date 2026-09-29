@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản Lý Công Việc - Firebase & StackBlitz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen">
+    <div class="max-w-4xl mx-auto p-4 sm:p-6">
+      <!-- Header -->
+      <header
+        class="flex justify-between items-center bg-white p-4 rounded-lg shadow mb-6"
+      >
+        <h1 class="text-2xl font-bold text-gray-800">📋 Quản Lý Công Việc</h1>
+        <div id="userInfo" class="hidden flex items-center space-x-3">
+          <span id="userEmail" class="text-sm font-medium text-gray-600"></span>
+          <button
+            id="logoutBtn"
+            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+
+      <!-- Màn hình Đăng nhập / Đăng ký -->
+      <div
+        id="authContainer"
+        class="bg-white p-6 rounded-lg shadow max-w-md mx-auto"
+      >
+        <h2 id="authTitle" class="text-xl font-semibold mb-4 text-center">
+          Đăng Nhập
+        </h2>
+        <form id="authForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              id="authEmail"
+              required
+              class="w-full border rounded p-2 mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700"
+              >Mật khẩu</label
+            >
+            <input
+              type="password"
+              id="authPassword"
+              required
+              class="w-full border rounded p-2 mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+          <p id="authError" class="text-red-500 text-sm hidden"></p>
+          <button
+            type="submit"
+            id="authSubmitBtn"
+            class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          >
+            Đăng Nhập
+          </button>
+        </form>
+        <div class="mt-4 text-center text-sm">
+          <span id="toggleAuthText">Chưa có tài khoản?</span>
+          <button
+            id="toggleAuthBtn"
+            class="text-blue-600 font-semibold ml-1 underline"
+          >
+            Đăng ký ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard Quản lý công việc -->
+      <div id="appContainer" class="hidden space-y-6">
+        <!-- Form Thêm Công Việc -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h2 class="text-lg font-semibold mb-4 text-gray-700">
+            Thêm Công Việc Mới
+          </h2>
+          <form id="addTaskForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+              <input
+                type="text"
+                id="taskTitle"
+                placeholder="Tên công việc..."
+                required
+                class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1"
+                >Hạn chót</label
+              >
+              <input
+                type="date"
+                id="taskDueDate"
+                class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1"
+                >Mức độ ưu tiên</label
+              >
+              <select
+                id="taskPriority"
+                class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="Thấp">Thấp</option>
+                <option value="Trung bình" selected>Trung bình</option>
+                <option value="Cao">Cao</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <button
+                type="submit"
+                class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-medium"
+              >
+                + Thêm Công Việc
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Danh sách Công Việc -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-gray-700">
+              Danh Sách Công Việc
+            </h2>
+            <select id="filterStatus" class="border rounded p-1 text-sm">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="pending">Chưa hoàn thành</option>
+              <option value="completed">Đã hoàn thành</option>
+            </select>
+          </div>
+          <div id="taskList" class="space-y-3">
+            <p class="text-gray-500 text-center py-4">Đang tải công việc...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIREBASE CONFIG & LOGIC -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        query,
+        where,
+        onSnapshot,
+        doc,
+        updateDoc,
+        deleteDoc,
+        serverTimestamp,
+      } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+      // Cấu hình Firebase dự án "quanlycongviec-651b6"
+      const firebaseConfig = {
+        apiKey: 'AIzaSyBYjORDaQLmPwfAFhqRTwAi-ufVec8qd_0',
+        authDomain: 'quanlycongviec-651b6.firebaseapp.com',
+        projectId: 'quanlycongviec-651b6',
+        storageBucket: 'quanlycongviec-651b6.firebasestorage.app',
+        messagingSenderId: '775368483539',
+        appId: '1:775368483539:web:c9464d5f59c3104fe2aa26',
+      };
+
+      // Khởi tạo Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      // DOM Elements
+      const authContainer = document.getElementById('authContainer');
+      const appContainer = document.getElementById('appContainer');
+      const userInfo = document.getElementById('userInfo');
+      const userEmail = document.getElementById('userEmail');
+      const authForm = document.getElementById('authForm');
+      const authTitle = document.getElementById('authTitle');
+      const authSubmitBtn = document.getElementById('authSubmitBtn');
+      const toggleAuthBtn = document.getElementById('toggleAuthBtn');
+      const toggleAuthText = document.getElementById('toggleAuthText');
+      const authError = document.getElementById('authError');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const addTaskForm = document.getElementById('addTaskForm');
+      const taskList = document.getElementById('taskList');
+      const filterStatus = document.getElementById('filterStatus');
+
+      let currentUser = null;
+      let isLoginState = true;
+      let unsubscribeSnapshot = null;
+      let allTasks = [];
+
+      // --- AUTHENTICATION ---
+      toggleAuthBtn.addEventListener('click', () => {
+        isLoginState = !isLoginState;
+        authTitle.textContent = isLoginState
+          ? 'Đăng Nhập'
+          : 'Đăng Ký Tài Khoản';
+        authSubmitBtn.textContent = isLoginState
+          ? 'Đăng Nhập'
+          : 'Tạo Tài Khoản';
+        toggleAuthText.textContent = isLoginState
+          ? 'Chưa có tài khoản?'
+          : 'Đã có tài khoản?';
+        toggleAuthBtn.textContent = isLoginState ? 'Đăng ký ngay' : 'Đăng nhập';
+        authError.classList.add('hidden');
+      });
+
+      authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        authError.classList.add('hidden');
+
+        try {
+          if (isLoginState) {
+            await signInWithEmailAndPassword(auth, email, password);
+          } else {
+            await createUserWithEmailAndPassword(auth, email, password);
+          }
+        } catch (err) {
+          authError.textContent = err.message;
+          authError.classList.remove('hidden');
+        }
+      });
+
+      logoutBtn.addEventListener('click', () => signOut(auth));
+
+      // Kiểm tra trạng thái đăng nhập
+      onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (user) {
+          userEmail.textContent = user.email;
+          authContainer.classList.add('hidden');
+          appContainer.classList.remove('hidden');
+          userInfo.classList.remove('hidden');
+          listenToTasks();
+        } else {
+          if (unsubscribeSnapshot) unsubscribeSnapshot();
+          authContainer.classList.remove('hidden');
+          appContainer.classList.add('hidden');
+          userInfo.classList.add('hidden');
+          taskList.innerHTML = '';
+        }
+      });
+
+      // --- THÊM CÔNG VIỆC CỦA USER ---
+      addTaskForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('taskTitle').value;
+        const dueDate = document.getElementById('taskDueDate').value;
+        const priority = document.getElementById('taskPriority').value;
+
+        try {
+          await addDoc(collection(db, 'tasks'), {
+            userId: currentUser.uid,
+            title: title,
+            dueDate: dueDate || 'Không xác định',
+            priority: priority,
+            completed: false,
+            createdAt: serverTimestamp(),
+          });
+          addTaskForm.reset();
+        } catch (err) {
+          alert('Lỗi thêm công việc: ' + err.message);
+        }
+      });
+
+      // --- LẤY DANH SÁCH REAL-TIME TỪ FIRESTORE ---
+      function listenToTasks() {
+        const q = query(
+          collection(db, 'tasks'),
+          where('userId', '==', currentUser.uid)
+        );
+
+        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+          allTasks = [];
+          snapshot.forEach((docSnap) => {
+            allTasks.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          renderTasks();
+        });
+      }
+
+      // Hiển thị danh sách công việc
+      function renderTasks() {
+        const filter = filterStatus.value;
+        const filtered = allTasks.filter((t) => {
+          if (filter === 'pending') return !t.completed;
+          if (filter === 'completed') return t.completed;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          taskList.innerHTML =
+            '<p class="text-gray-400 text-center py-4">Chưa có công việc nào.</p>';
+          return;
+        }
+
+        const priorityBadge = (p) => {
+          if (p === 'Cao')
+            return '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">Cao</span>';
+          if (p === 'Trung bình')
+            return '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-semibold">Trung bình</span>';
+          return '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Thấp</span>';
+        };
+
+        taskList.innerHTML = filtered
+          .map(
+            (task) => `
+        <div class="flex items-center justify-between p-3 border rounded-lg ${
+          task.completed ? 'bg-gray-50 opacity-75' : 'bg-white'
+        }">
+          <div class="flex items-center space-x-3">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+              onchange="toggleTask('${task.id}', ${!task.completed})"
+              class="w-5 h-5 text-blue-600 rounded cursor-pointer">
+            <div>
+              <p class="font-medium ${
+                task.completed ? 'line-through text-gray-500' : 'text-gray-800'
+              }">${task.title}</p>
+              <div class="text-xs text-gray-500 flex items-center space-x-2 mt-1">
+                <span>📅 ${task.dueDate}</span>
+                ${priorityBadge(task.priority)}
+              </div>
+            </div>
+          </div>
+          <button onclick="deleteTask('${
+            task.id
+          }')" class="text-red-500 hover:text-red-700 text-sm p-1">🗑️ Xóa</button>
+        </div>
+      `
+          )
+          .join('');
+      }
+
+      filterStatus.addEventListener('change', renderTasks);
+
+      // Xử lý các sự kiện toàn cục
+      window.toggleTask = async (id, newStatus) => {
+        await updateDoc(doc(db, 'tasks', id), { completed: newStatus });
+      };
+
+      window.deleteTask = async (id) => {
+        if (confirm('Bạn có chắc chắn muốn xóa công việc này?')) {
+          await deleteDoc(doc(db, 'tasks', id));
+        }
+      };
+    </script>
+  </body>
+</html>
