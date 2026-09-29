@@ -223,12 +223,11 @@ class App {
         this.initUI();
     }
 
-    // Hàm bổ trợ chuyển đổi YYYY-MM-DD sang dd/mm/yy
     formatDateShort(dateStr) {
         if (!dateStr) return '';
         const parts = dateStr.split('-');
         if (parts.length === 3) {
-            const yearShort = parts[0].substring(2); // Lấy 2 số cuối năm (vd 2026 -> 26)
+            const yearShort = parts[0].substring(2);
             return `${parts[2]}/${parts[1]}/${yearShort}`; // dd/mm/yy
         }
         return dateStr;
@@ -337,7 +336,7 @@ class App {
                             <p class="text-xs text-slate-500 mt-1">Theo dõi, giao việc và cập nhật tiến độ minh chứng</p>
                         </div>
 
-                        <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... -->
+                        <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... & NÚT XUẤT EXCEL -->
                         <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
                             <span class="text-xs font-semibold text-slate-600 pl-1"><i class="fa-solid fa-calendar-days text-indigo-600 mr-1"></i> Lọc thời hạn:</span>
                             <input type="date" id="filter-start-date" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -345,6 +344,11 @@ class App {
                             <input type="date" id="filter-end-date" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
                             <button id="btn-apply-date" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm transition">Lọc</button>
                             <button id="btn-clear-date" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-medium rounded-lg transition">Tất cả</button>
+                            
+                            <!-- NÚT XUẤT EXCEL -->
+                            <button id="btn-export-excel" class="ml-2 px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Xuất danh sách công việc ra Excel theo thời gian đã chọn">
+                                <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                            </button>
                         </div>
                     </div>
 
@@ -620,6 +624,11 @@ class App {
             this.renderTaskTable(user);
         });
 
+        // LẮNG NGHE SỰ KIỆN XUẤT EXCEL
+        document.getElementById('btn-export-excel').addEventListener('click', () => {
+            this.exportTasksToExcel(user);
+        });
+
         // Đăng xuất & Đổi pass
         document.getElementById('btn-logout').addEventListener('click', () => {
             this.authService.logout();
@@ -801,6 +810,39 @@ class App {
         });
     }
 
+    // XUẤT RA EXCEL (CSV)
+    exportTasksToExcel(user) {
+        const tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName);
+        if (tasks.length === 0) {
+            alert('Không có dữ liệu công việc trong khoảng thời gian và bộ lọc hiện tại để xuất Excel!');
+            return;
+        }
+
+        let csvContent = "\uFEFF"; // BOM để Excel nhận diện đúng UTF-8 (tiếng Việt có dấu)
+        csvContent += "STT,Thời gian (Thời hạn),Họ và tên (Chủ trì),Tên công việc,Trạng thái\r\n";
+
+        tasks.forEach((t, index) => {
+            const stt = index + 1;
+            const timeStr = t.deadline || '';
+            // Tách lấy Họ tên chính (bỏ phần chức vụ trong ngoặc nếu cần, hoặc để nguyên)
+            const assigneeStr = `"${(t.assignee || '').replace(/"/g, '""')}"`;
+            const titleStr = `"${(t.title || '').replace(/"/g, '""')}"`;
+            const statusStr = t.status === 'DONE' ? 'Hoàn thành' : (t.status === 'DOING' ? 'Đang làm' : (t.status === 'LATE' ? 'Trễ hạn' : 'Mới đăng ký'));
+
+            csvContent += `${stt},${timeStr},${assigneeStr},${titleStr},${statusStr}\r\n`;
+        });
+
+        const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        
+        const timeLabel = (this.startDate && this.endDate) ? `_${this.startDate}_den_${this.endDate}` : '_tat_ca';
+        link.setAttribute("download", `Bao_cao_cong_viec${timeLabel}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     renderTaskTable(user) {
         this.updateDeptBadges();
 
@@ -885,7 +927,6 @@ class App {
                 actionBtnHtml = `<span class="text-slate-400 text-xs italic">Xem</span>`;
             }
 
-            // ĐỊNH DẠNG NGÀY HIỂN THỊ DẠNG dd/mm/yy & GIỮ TRÊN 1 DÒNG (whitespace-nowrap)
             const formattedDeadline = this.formatDateShort(task.deadline);
 
             tr.innerHTML = `
