@@ -88,17 +88,19 @@ class AuthService {
 // 2. CLASS TASK & TASK SERVICE
 // ==========================================
 class Task {
-    constructor(id, title, dept, deptName, assignee, deadline, status, directive = '', expectedProduct = '', coWorkers = []) {
+    constructor(id, title, dept, deptName, assignee, deadline, status, directive = '', expectedProduct = '', coWorkers = [], proofUrl = '', proofNote = '') {
         this.id = id;
         this.title = title;
         this.dept = dept;
         this.deptName = deptName;
-        this.assignee = assignee;
-        this.coWorkers = coWorkers;
-        this.deadline = deadline;
-        this.status = status;
-        this.directive = directive;
-        this.expectedProduct = expectedProduct;
+        this.assignee = assignee;         // Người chủ trì chính
+        this.coWorkers = coWorkers;       // Danh sách người phối hợp (Mảng tên)
+        this.deadline = deadline;         // Định dạng YYYY-MM-DD
+        this.status = status;             // 'DOING', 'DONE', 'LATE'
+        this.directive = directive;       // Chỉ đạo BGĐ
+        this.expectedProduct = expectedProduct; // Sản phẩm dự kiến
+        this.proofUrl = proofUrl;         // Link đính kèm minh chứng
+        this.proofNote = proofNote;       // Ghi chú minh chứng
     }
 
     setDirective(text) {
@@ -109,6 +111,12 @@ class Task {
         this.assignee = assignee;
         this.coWorkers = coWorkers;
     }
+
+    updateStatusAndProof(newStatus, proofUrl, proofNote) {
+        this.status = newStatus;
+        this.proofUrl = proofUrl;
+        this.proofNote = proofNote;
+    }
 }
 
 class TaskService {
@@ -116,12 +124,12 @@ class TaskService {
         const savedTasks = localStorage.getItem('ufm_tasks');
         if (savedTasks) {
             const raw = JSON.parse(savedTasks);
-            this.tasks = raw.map(t => new Task(t.id, t.title, t.dept, t.deptName, t.assignee, t.deadline, t.status, t.directive, t.expectedProduct, t.coWorkers || []));
+            this.tasks = raw.map(t => new Task(t.id, t.title, t.dept, t.deptName, t.assignee, t.deadline, t.status, t.directive, t.expectedProduct, t.coWorkers || [], t.proofUrl || '', t.proofNote || ''));
         } else {
             this.tasks = [
-                new Task(1, 'Báo cáo kiểm kê tài sản & hạ tầng CNTT Quý 3/2026', 'HC-TV', 'Hành chính - Tài vụ', 'Trần Thị Bích Liên (Trưởng phòng)', '2026-09-30', 'LATE', '', 'Bảng tổng hợp kiểm kê', ['Phạm Ngọc Thắng', 'Đinh Thanh Hà']),
+                new Task(1, 'Báo cáo kiểm kê tài sản & hạ tầng CNTT Quý 3/2026', 'HC-TV', 'Hành chính - Tài vụ', 'Trần Thị Bích Liên (Trưởng Phòng)', '2026-09-30', 'LATE', '', 'Bảng tổng hợp kiểm kê', ['Phạm Ngọc Thắng', 'Đinh Thanh Hà']),
                 new Task(2, 'Triển khai bảo trì hệ thống mạng máy tính phòng họp', 'HC-TV', 'Hành chính - Tài vụ', 'Đinh Thanh Hà (Kỹ sư)', '2026-10-02', 'DOING', '', 'Mạng ổn định', ['Bùi Trần Quyết Thắng']),
-                new Task(3, 'Thanh toán chi phí điện nước và dịch vụ vệ sinh tháng 9', 'HC-TV', 'Hành chính - Tài vụ', 'Huỳnh Thị Anh Tùng (Kế toán viên)', '2026-09-29', 'DONE', '', 'Hóa đơn chứng từ', []),
+                new Task(3, 'Thanh toán chi phí điện nước và dịch vụ vệ sinh tháng 9', 'HC-TV', 'Hành chính - Tài vụ', 'Huỳnh Thị Anh Tùng (Kế toán viên)', '2026-09-29', 'DONE', '', 'Hóa đơn chứng từ', [], 'https://drive.google.com/file/d/sample_bill', 'Đã chuyển kế toán duyệt'),
                 new Task(4, 'Lập danh sách sinh viên xét học bổng học kỳ 1', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Phạm Hoài Nam (Trưởng phòng)', '2026-10-03', 'DOING', '', 'Danh sách SV đạt chuẩn', ['Võ Văn Thảo', 'Tạ Thị Quỳnh Ngọc']),
                 new Task(5, 'Cập nhật thời khóa biểu bổ sung cho các lớp buổi tối', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Tạ Thị Quỳnh Ngọc (Chuyên viên chính)', '2026-10-01', 'DONE', '', 'TKB công bố trên web', []),
                 new Task(6, 'Tổng hợp đề xuất đề tài nghiên cứu khoa học cấp cơ sở', 'DT-QLSV', 'Đào tạo - KH & QLSV', 'Huỳnh Ngọc Nghiêm (Phó Trưởng phòng)', '2026-09-28', 'LATE', '', 'Danh mục đề tài KH', ['Lê Thị Tuyết Dung'])
@@ -134,21 +142,22 @@ class TaskService {
         localStorage.setItem('ufm_tasks', JSON.stringify(this.tasks));
     }
 
-    getTasks(deptCode = 'ALL', startDate = '', endDate = '') {
+    getTasks(deptCode = 'ALL', startDate = '', endDate = '', userFullName = '') {
         let list = this.tasks;
-        if (deptCode !== 'ALL') {
+        
+        // Nếu chọn xem Công việc của tôi
+        if (deptCode === 'MY_TASKS' && userFullName) {
+            list = list.filter(t => t.assignee.includes(userFullName) || (t.coWorkers && t.coWorkers.some(cw => cw.includes(userFullName))));
+        } else if (deptCode !== 'ALL') {
             list = list.filter(t => t.dept === deptCode);
         }
-        if (startDate) {
-            list = list.filter(t => t.deadline >= startDate);
-        }
-        if (endDate) {
-            list = list.filter(t => t.deadline <= endDate);
-        }
+
+        if (startDate) list = list.filter(t => t.deadline >= startDate);
+        if (endDate) list = list.filter(t => t.deadline <= endDate);
+
         return list;
     }
 
-    // Thêm danh sách nhiều công việc cùng lúc
     addMultipleTasks(taskList) {
         taskList.forEach((t, idx) => {
             const newId = Date.now() + idx;
@@ -162,6 +171,16 @@ class TaskService {
         const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             task.assignTask(assignee, coWorkers);
+            this.saveTasks();
+            return true;
+        }
+        return false;
+    }
+
+    updateTaskStatusAndProof(taskId, status, proofUrl, proofNote) {
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task) {
+            task.updateStatusAndProof(status, proofUrl, proofNote);
             this.saveTasks();
             return true;
         }
@@ -291,7 +310,7 @@ class App {
                             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <i class="fa-solid fa-chart-line text-indigo-600"></i> Bảng Điều Khiển Tổng Quan Công Việc
                             </h2>
-                            <p class="text-xs text-slate-500 mt-1">Theo dõi và quản lý danh sách công việc toàn Phân hiệu</p>
+                            <p class="text-xs text-slate-500 mt-1">Theo dõi, báo cáo tiến độ và minh chứng công việc</p>
                         </div>
 
                         <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... -->
@@ -305,10 +324,14 @@ class App {
                         </div>
                     </div>
 
-                    <!-- MENU NÚT CHỌN LỌC PHÒNG BAN VÀ ĐĂNG KÝ MỚI -->
+                    <!-- TAB DÂN CƯ VÀ ĐĂNG KÝ CÔNG VIỆC -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-                        <div class="flex items-center gap-2">
-                            <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition">Tất Cả Phòng Ban</button>
+                        <div class="flex items-center gap-2 overflow-x-auto pb-1">
+                            <!-- NÚT CÔNG VIỆC CỦA TÔI -->
+                            <button data-dept="MY_TASKS" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-check"></i> Công Việc Của Tôi
+                            </button>
+                            <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Tất Cả Phòng Ban</button>
                             <button data-dept="HC-TV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Hành Chính - Tài Vụ</button>
                             <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Đào Tạo - KH & QLSV</button>
                         </div>
@@ -345,7 +368,7 @@ class App {
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                     <div class="p-4 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-bars-staggered text-indigo-600"></i> Danh Sách Công Việc Đã Đăng Ký
+                            <i class="fa-solid fa-bars-staggered text-indigo-600"></i> Danh Sách Công Việc
                         </h3>
                         <span id="task-count-label" class="text-xs text-slate-400">0 công việc</span>
                     </div>
@@ -358,7 +381,7 @@ class App {
                                     <th class="py-3 px-4">Phòng Ban</th>
                                     <th class="py-3 px-4">Chủ Trì & Phối Hợp</th>
                                     <th class="py-3 px-4">Thời Hạn</th>
-                                    <th class="py-3 px-4">Trạng Thái</th>
+                                    <th class="py-3 px-4">Trạng Thái & Minh Chứng</th>
                                     <th class="py-3 px-4 text-center">Thao Tác</th>
                                 </tr>
                             </thead>
@@ -368,7 +391,44 @@ class App {
                 </div>
             </main>
 
-            <!-- MODAL ĐĂNG KÝ NHIỆM VỤ DẠNG BẢNG EXCEL DẠNG NHIỀU DÒNG -->
+            <!-- MODAL BÁO CÁO TIẾN ĐỘ & UPLOAD MINH CHỨNG (CHO NHÂN VIÊN/TRƯỞNG PHÒNG) -->
+            <div id="modal-update-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-pen-to-square text-indigo-600 mr-1.5"></i> Cập Nhật Tiến Độ & Minh Chứng</h3>
+                        <button id="close-modal-update" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <form id="form-update-task" class="space-y-4">
+                        <input type="hidden" id="update-task-id">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Công việc:</label>
+                            <p id="update-task-title-display" class="text-xs font-bold text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Trạng thái công việc <span class="text-rose-500">*</span></label>
+                            <select id="update-task-status" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500">
+                                <option value="DOING">⏳ Đang thực hiện</option>
+                                <option value="DONE">✅ Đã hoàn thành</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Link đính kèm minh chứng / Báo cáo</label>
+                            <input type="url" id="update-task-url" placeholder="https://drive.google.com/..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500">
+                            <p class="text-[11px] text-slate-400 mt-1"><i class="fa-solid fa-link"></i> Dán đường dẫn Google Drive, OneDrive hoặc Link kết quả</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Ghi chú minh chứng / Sản phẩm</label>
+                            <textarea id="update-task-note" rows="2" placeholder="Ghi chú thêm về kết quả thực hiện..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button type="button" id="btn-cancel-update" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">Hủy</button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm">Báo Cáo Tiến Độ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC TỰ ĐỘNG DẠNG EXCEL -->
             <div id="modal-add-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh]">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
@@ -393,9 +453,7 @@ class App {
                                         <th class="py-2.5 px-3 w-12 text-center">Xóa</th>
                                     </tr>
                                 </thead>
-                                <tbody id="task-grid-rows" class="divide-y divide-slate-200 bg-white">
-                                    <!-- CÁC DÒNG SẼ ĐƯỢC TỰ ĐỘNG THÊM BẰNG JAVASCRIPT -->
-                                </tbody>
+                                <tbody id="task-grid-rows" class="divide-y divide-slate-200 bg-white"></tbody>
                             </table>
                         </div>
 
@@ -474,19 +532,22 @@ class App {
             </div>
         `;
 
+        // Mặc định chọn tab "Công việc của tôi" cho người dùng vừa đăng nhập
+        this.currentDept = 'MY_TASKS';
+
         this.bindEvents(user);
         this.renderTaskTable(user);
     }
 
     bindEvents(user) {
-        // Lắng nghe Lọc Phòng Ban
+        // Lắng nghe Lọc Phòng Ban / Công Việc CỦA TÔI
         document.querySelectorAll('.dept-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.dept-btn').forEach(b => {
-                    b.className = "dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+                    b.className = "dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1.5";
                 });
                 const targetBtn = e.currentTarget;
-                targetBtn.className = "dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition";
+                targetBtn.className = "dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5";
                 
                 this.currentDept = targetBtn.getAttribute('data-dept');
                 this.renderTaskTable(user);
@@ -579,7 +640,6 @@ class App {
             tr.querySelector('.btn-remove-row').addEventListener('click', () => {
                 if (gridTbody.children.length > 1) {
                     tr.remove();
-                    // Cập nhật lại STT
                     Array.from(gridTbody.children).forEach((r, idx) => {
                         r.querySelector('.row-stt').innerText = idx + 1;
                     });
@@ -593,7 +653,6 @@ class App {
 
         const resetAndInitGrid = () => {
             gridTbody.innerHTML = '';
-            // Khởi tạo sẵn 3 dòng mặc định
             gridTbody.appendChild(createGridRow(1));
             gridTbody.appendChild(createGridRow(2));
             gridTbody.appendChild(createGridRow(3));
@@ -614,10 +673,8 @@ class App {
         document.getElementById('close-modal-add').addEventListener('click', () => modalAdd.classList.add('hidden'));
         document.getElementById('btn-cancel-add').addEventListener('click', () => modalAdd.classList.add('hidden'));
 
-        // Xử lý nộp form đăng ký danh sách công việc
         document.getElementById('form-add-task-grid').addEventListener('submit', (e) => {
             e.preventDefault();
-            
             const rows = Array.from(gridTbody.querySelectorAll('.grid-row'));
             const tasksToAdd = [];
             const deptId = user.deptId || 'HC-TV';
@@ -664,6 +721,23 @@ class App {
             modalAssign.classList.add('hidden');
             this.renderTaskTable(user);
         });
+
+        // Sự kiện Modal Báo cáo tiến độ & Minh chứng (Cho Nhân viên/Chủ trì)
+        const modalUpdate = document.getElementById('modal-update-task');
+        document.getElementById('close-modal-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
+        document.getElementById('btn-cancel-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
+
+        document.getElementById('form-update-task').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const taskId = parseInt(document.getElementById('update-task-id').value);
+            const status = document.getElementById('update-task-status').value;
+            const proofUrl = document.getElementById('update-task-url').value.trim();
+            const proofNote = document.getElementById('update-task-note').value.trim();
+
+            this.taskService.updateTaskStatusAndProof(taskId, status, proofUrl, proofNote);
+            modalUpdate.classList.add('hidden');
+            this.renderTaskTable(user);
+        });
     }
 
     renderTaskTable(user) {
@@ -674,7 +748,7 @@ class App {
         const isBGD = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_BGD';
         const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
 
-        let tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate);
+        let tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName);
 
         // Thống kê
         document.getElementById('stat-total').innerText = tasks.length;
@@ -693,20 +767,39 @@ class App {
             tr.className = "hover:bg-slate-50/80 transition";
 
             let statusBadge = task.status === 'LATE'
-                ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">Trễ Hạn</span>`
+                ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Trễ Hạn</span>`
                 : task.status === 'DOING'
-                ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Đang Làm</span>`
-                : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Hoàn Thành</span>`;
+                ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><i class="fa-solid fa-spinner mr-1"></i> Đang Làm</span>`
+                : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Hoàn Thành</span>`;
+
+            // Hiển thị Link Minh chứng (Nếu có)
+            let proofHtml = '';
+            if (task.proofUrl) {
+                proofHtml = `<div class="mt-1 text-xs"><a href="${task.proofUrl}" target="_blank" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1"><i class="fa-solid fa-link text-indigo-500"></i> Xem Minh chứng / File</a></div>`;
+            }
+            if (task.proofNote) {
+                proofHtml += `<div class="text-[11px] text-slate-500 italic mt-0.5"><i class="fa-solid fa-comment-dots mr-1"></i> Ghi chú: ${task.proofNote}</div>`;
+            }
 
             let coWorkerText = task.coWorkers && task.coWorkers.length > 0
                 ? `<div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-users text-indigo-500 mr-1"></i> <b>Phối hợp:</b> ${task.coWorkers.join(', ')}</div>`
                 : '';
 
+            // Kiểm tra xem User hiện tại có phải là người nhận trách nhiệm thực hiện hay không
+            const isAssignedToMe = task.assignee.includes(user.fullName) || (task.coWorkers && task.coWorkers.some(cw => cw.includes(user.fullName)));
+
             let actionBtnHtml = '';
             if (isBGD) {
                 actionBtnHtml = `<button class="btn-directive text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-comment-dots mr-1"></i> Cho chỉ đạo</button>`;
             } else if (isManager) {
-                actionBtnHtml = `<button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-user-plus mr-1"></i> Giao việc</button>`;
+                actionBtnHtml = `
+                    <div class="flex items-center justify-center gap-1.5">
+                        <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md text-xs font-medium" title="Giao việc"><i class="fa-solid fa-user-plus mr-1"></i> Giao việc</button>
+                        <button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md text-xs font-medium" title="Cập nhật minh chứng"><i class="fa-solid fa-pen-to-square"></i></button>
+                    </div>
+                `;
+            } else if (isAssignedToMe) {
+                actionBtnHtml = `<button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-pen-to-square mr-1"></i> Báo cáo / Minh chứng</button>`;
             } else {
                 actionBtnHtml = `<span class="text-slate-400 text-xs italic">Xem</span>`;
             }
@@ -723,11 +816,14 @@ class App {
                     ${coWorkerText}
                 </td>
                 <td class="py-3.5 px-4 font-medium ${task.status === 'LATE' ? 'text-rose-600' : 'text-slate-700'}">${task.deadline}</td>
-                <td class="py-3.5 px-4">${statusBadge}</td>
+                <td class="py-3.5 px-4">
+                    <div>${statusBadge}</div>
+                    ${proofHtml}
+                </td>
                 <td class="py-3.5 px-4 text-center">${actionBtnHtml}</td>
             `;
 
-            // Xử lý nút BGĐ cho chỉ đạo
+            // Nút BGĐ chỉ đạo
             if (isBGD && tr.querySelector('.btn-directive')) {
                 tr.querySelector('.btn-directive').addEventListener('click', () => {
                     const directive = prompt(`Nhập ý kiến chỉ đạo của BGĐ cho:\n"${task.title}"`);
@@ -738,7 +834,7 @@ class App {
                 });
             }
 
-            // Xử lý nút Trưởng phòng giao việc
+            // Nút Trưởng phòng giao việc
             if (isManager && tr.querySelector('.btn-assign')) {
                 tr.querySelector('.btn-assign').addEventListener('click', () => {
                     const modalAssign = document.getElementById('modal-assign-task');
@@ -767,6 +863,20 @@ class App {
                     });
 
                     modalAssign.classList.remove('hidden');
+                });
+            }
+
+            // Nút Cập nhật tiến độ & Minh chứng (Cho Nhân viên hoặc Trưởng phòng)
+            if (tr.querySelector('.btn-update-proof')) {
+                tr.querySelector('.btn-update-proof').addEventListener('click', () => {
+                    const modalUpdate = document.getElementById('modal-update-task');
+                    document.getElementById('update-task-id').value = task.id;
+                    document.getElementById('update-task-title-display').innerText = task.title;
+                    document.getElementById('update-task-status').value = task.status === 'DONE' ? 'DONE' : 'DOING';
+                    document.getElementById('update-task-url').value = task.proofUrl || '';
+                    document.getElementById('update-task-note').value = task.proofNote || '';
+
+                    modalUpdate.classList.remove('hidden');
                 });
             }
 
