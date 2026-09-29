@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Quản Lý Công Việc - Ban Giám Đốc</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -15,7 +13,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- TOP NAVIGATION BAR -->
+    <!-- TOP NAVBAR -->
     <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
             <div class="flex items-center space-x-3">
@@ -28,7 +26,6 @@
                 </div>
             </div>
 
-            <!-- User Info / Super Admin Badge -->
             <div class="flex items-center space-x-4">
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-semibold text-white">Phạm Ngọc Thắng</p>
@@ -39,9 +36,6 @@
                 <div class="w-10 h-10 rounded-full bg-indigo-700 border-2 border-indigo-400 flex items-center justify-center font-bold text-white shadow">
                     PNT
                 </div>
-                <button title="Đăng xuất" class="text-indigo-200 hover:text-white p-2 rounded-lg hover:bg-indigo-800 transition">
-                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
-                </button>
             </div>
         </div>
     </header>
@@ -49,7 +43,6 @@
     <!-- MAIN CONTAINER -->
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
 
-        <!-- DASHBOARD HEADER & FILTERS -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -60,31 +53,22 @@
                     <p class="text-sm text-slate-500 mt-0.5">Theo dõi tiến độ đăng ký và thực hiện công việc tuần của các Phòng/Ban</p>
                 </div>
 
-                <!-- Action Controls -->
-                <div class="flex flex-wrap items-center gap-3">
-                    <!-- Tuần Selector -->
+                <div class="flex items-center gap-3">
                     <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
-                        <button class="p-1.5 hover:bg-white rounded-md text-slate-600 shadow-sm transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
                         <span class="px-3 text-xs font-semibold text-slate-700">Tuần 39 (28/09 - 04/10/2026)</span>
-                        <button class="p-1.5 hover:bg-white rounded-md text-slate-600 shadow-sm transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                     </div>
-
-                    <!-- Export Report -->
-                    <button class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo Tuần
-                    </button>
                 </div>
             </div>
 
             <!-- TAB LỌC PHÒNG BAN -->
             <div class="mt-5 border-t border-slate-100 pt-4 flex flex-wrap gap-2">
-                <button class="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition">
-                    <i class="fa-solid fa-building mr-1"></i> Tất Cả Phòng Ban (2)
+                <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition">
+                    <i class="fa-solid fa-building mr-1"></i> Tất Cả Phòng Ban
                 </button>
-                <button class="px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                <button data-dept="HC-TV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
                     Hành Chính - Tài Vụ
                 </button>
-                <button class="px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
                     Đào Tạo - Khoa Học & QLSV
                 </button>
             </div>
@@ -92,48 +76,40 @@
 
         <!-- STATS KPI CARDS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <!-- Card 1 -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium text-slate-500 uppercase">Tổng Công Việc Tuần</p>
-                    <p class="text-2xl font-bold text-slate-800 mt-1">18</p>
-                    <span class="text-[11px] text-slate-400">Đã đăng ký trong tuần</span>
+                    <p class="text-2xl font-bold text-slate-800 mt-1" id="stat-total">0</p>
                 </div>
                 <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
                     <i class="fa-solid fa-list-check"></i>
                 </div>
             </div>
 
-            <!-- Card 2 -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium text-slate-500 uppercase">Đang Thực Hiện</p>
-                    <p class="text-2xl font-bold text-amber-600 mt-1">7</p>
-                    <span class="text-[11px] text-amber-600 font-medium">Đang trong tiến độ</span>
+                    <p class="text-2xl font-bold text-amber-600 mt-1" id="stat-doing">0</p>
                 </div>
                 <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
                     <i class="fa-solid fa-spinner fa-spin-pulse"></i>
                 </div>
             </div>
 
-            <!-- Card 3 -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium text-slate-500 uppercase">Đã Hoàn Thành</p>
-                    <p class="text-2xl font-bold text-emerald-600 mt-1">9</p>
-                    <span class="text-[11px] text-emerald-600 font-medium">Đạt 50% kế hoạch</span>
+                    <p class="text-2xl font-bold text-emerald-600 mt-1" id="stat-done">0</p>
                 </div>
                 <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
             </div>
 
-            <!-- Card 4 -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium text-slate-500 uppercase">Cảnh Báo Trễ Hạn</p>
-                    <p class="text-2xl font-bold text-rose-600 mt-1">2</p>
-                    <span class="text-[11px] text-rose-600 font-medium">Cần BGĐ chỉ đạo</span>
+                    <p class="text-2xl font-bold text-rose-600 mt-1" id="stat-late">0</p>
                 </div>
                 <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -141,111 +117,40 @@
             </div>
         </div>
 
-        <!-- DANH SÁCH CÔNG VIỆC THEO PHÒNG BAN -->
+        <!-- DANH SÁCH CÔNG VIỆC -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
                     <i class="fa-solid fa-tasks text-indigo-600"></i>
                     Danh Sách Công Việc Đăng Ký Trong Tuần
                 </h3>
-                <span class="text-xs text-slate-500">Hiển thị 18 công việc</span>
+                <span class="text-xs text-slate-500" id="task-count-label">Hiển thị 0 công việc</span>
             </div>
 
-            <!-- TABLE -->
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
                         <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 uppercase text-[11px]">
                             <th class="py-3 px-4">Tên Công Việc</th>
-                            <th class="py-3 px-4">Phòng Ban Chịu Trách Nhiệm</th>
+                            <th class="py-3 px-4">Phòng Ban</th>
                             <th class="py-3 px-4">Người Phụ Trách</th>
-                            <th class="py-3 px-4">Thời Hạn (Deadline)</th>
+                            <th class="py-3 px-4">Thời Hạn</th>
                             <th class="py-3 px-4">Trạng Thái</th>
-                            <th class="py-3 px-4 text-center">Chỉ Đạo BGĐ</th>
+                            <th class="py-3 px-4 text-center">Thao Tác BGĐ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 font-normal text-slate-700">
-                        <!-- ROW 1: Trễ hạn (Cảnh báo đỏ) -->
-                        <tr class="hover:bg-slate-50/80 transition">
-                            <td class="py-3.5 px-4 font-medium text-slate-900">
-                                Báo cáo kiểm kê tài sản & hạ tầng CNTT Quý 3/2026
-                            </td>
-                            <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                                    Hành chính - Tài vụ
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4">Phạm Ngọc Thắng</td>
-                            <td class="py-3.5 px-4 text-rose-600 font-medium">30/09/2026 (Đã quá hạn)</td>
-                            <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
-                                    <i class="fa-solid fa-circle text-[8px]"></i> Trễ Hạn
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4 text-center">
-                                <button class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition">
-                                    <i class="fa-solid fa-comment-dots mr-1"></i> Ghi chỉ đạo
-                                </button>
-                            </td>
-                        </tr>
-
-                        <!-- ROW 2: Đang làm -->
-                        <tr class="hover:bg-slate-50/80 transition">
-                            <td class="py-3.5 px-4 font-medium text-slate-900">
-                                Lập danh sách sinh viên xét học bổng học kỳ 1
-                            </td>
-                            <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
-                                    Đào tạo - KH & QLSV
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4">Nguyễn Văn A</td>
-                            <td class="py-3.5 px-4">02/10/2026</td>
-                            <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                                    <i class="fa-solid fa-circle text-[8px]"></i> Đang Làm
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4 text-center">
-                                <button class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition">
-                                    <i class="fa-solid fa-comment-dots mr-1"></i> Ghi chỉ đạo
-                                </button>
-                            </td>
-                        </tr>
-
-                        <!-- ROW 3: Hoàn thành -->
-                        <tr class="hover:bg-slate-50/80 transition">
-                            <td class="py-3.5 px-4 font-medium text-slate-900">
-                                Triển khai bảo trì mạng Wifi các dãy phòng học
-                            </td>
-                            <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                                    Hành chính - Tài vụ
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4">Phạm Ngọc Thắng</td>
-                            <td class="py-3.5 px-4">28/09/2026</td>
-                            <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                    <i class="fa-solid fa-circle text-[8px]"></i> Hoàn Thành
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4 text-center">
-                                <button class="text-slate-400 hover:text-indigo-600 font-medium text-xs bg-slate-50 px-2.5 py-1 rounded-md transition">
-                                    <i class="fa-solid fa-eye mr-1"></i> Xem chỉ đạo
-                                </button>
-                            </td>
-                        </tr>
+                    <tbody id="task-table-body" class="divide-y divide-slate-100 font-normal text-slate-700">
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <!-- FOOTER -->
     <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500">
-        © 2026 Phân hiệu Trường Đại học Tài chính - Marketing tại tỉnh Quảng Ngãi. Hệ thống quản lý công việc nội bộ.
+        © 2026 Phân hiệu Trường Đại học Tài chính - Marketing tại tỉnh Quảng Ngãi.
     </footer>
 
+    <!-- TẢI MODULE JS TỪ THƯ MỤC JS -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
