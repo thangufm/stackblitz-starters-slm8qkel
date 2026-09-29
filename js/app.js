@@ -95,12 +95,12 @@ class Task {
         this.deptName = deptName;
         this.assignee = assignee;         // Người chủ trì chính
         this.coWorkers = coWorkers;       // Danh sách người phối hợp (Mảng tên)
-        this.deadline = deadline;         // Định dạng YYYY-MM-DD
+        this.deadline = deadline;         // YYYY-MM-DD
         this.status = status;             // 'DOING', 'DONE', 'LATE'
-        this.directive = directive;       // Chỉ đạo BGĐ
-        this.expectedProduct = expectedProduct; // Sản phẩm dự kiến
+        this.directive = directive;       // Chỉ đạo BGĐ / Lãnh đạo
+        this.expectedProduct = expectedProduct; 
         this.proofUrl = proofUrl;         // Link đính kèm minh chứng
-        this.proofNote = proofNote;       // Ghi chú minh chứng
+        this.proofNote = proofNote;       
     }
 
     setDirective(text) {
@@ -145,7 +145,6 @@ class TaskService {
     getTasks(deptCode = 'ALL', startDate = '', endDate = '', userFullName = '') {
         let list = this.tasks;
         
-        // Nếu chọn xem Công việc của tôi
         if (deptCode === 'MY_TASKS' && userFullName) {
             list = list.filter(t => t.assignee.includes(userFullName) || (t.coWorkers && t.coWorkers.some(cw => cw.includes(userFullName))));
         } else if (deptCode !== 'ALL') {
@@ -237,7 +236,7 @@ class App {
                     <form id="login-form" class="space-y-5">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Email UFM</label>
-                            <input type="email" id="login-email" required placeholder="tranthibichlien@ufm.edu.vn" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="email" id="login-email" required placeholder="vovanthao@ufm.edu.vn" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Mật khẩu</label>
@@ -276,6 +275,9 @@ class App {
             ? `<div class="text-xs text-amber-300 font-medium"><i class="fa-solid fa-crown text-[10px]"></i> ${user.position} (Super Admin)</div>`
             : `<div class="text-xs text-indigo-200 font-medium"><i class="fa-solid fa-user-tie text-[10px]"></i> ${user.position}</div>`;
 
+        // Đặt tên tiêu đề nút đăng ký linh hoạt theo chức vụ
+        const btnRegisterText = isManager ? 'Đăng Ký Nhiệm Vụ Với BGĐ' : 'Đăng Ký Nhiệm Vụ Với Lãnh Đạo Phòng';
+
         appContainer.innerHTML = `
             <!-- HEADER -->
             <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-30">
@@ -310,7 +312,7 @@ class App {
                             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <i class="fa-solid fa-chart-line text-indigo-600"></i> Bảng Điều Khiển Tổng Quan Công Việc
                             </h2>
-                            <p class="text-xs text-slate-500 mt-1">Theo dõi, báo cáo tiến độ và minh chứng công việc</p>
+                            <p class="text-xs text-slate-500 mt-1">Theo dõi, đăng ký công việc và cập nhật minh chứng kết quả</p>
                         </div>
 
                         <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... -->
@@ -324,10 +326,9 @@ class App {
                         </div>
                     </div>
 
-                    <!-- TAB DÂN CƯ VÀ ĐĂNG KÝ CÔNG VIỆC -->
+                    <!-- TAB DÂN CƯ VÀ NÚT ĐĂNG KÝ CÔNG VIỆC -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
                         <div class="flex items-center gap-2 overflow-x-auto pb-1">
-                            <!-- NÚT CÔNG VIỆC CỦA TÔI -->
                             <button data-dept="MY_TASKS" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5">
                                 <i class="fa-solid fa-user-check"></i> Công Việc Của Tôi
                             </button>
@@ -336,11 +337,10 @@ class App {
                             <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Đào Tạo - KH & QLSV</button>
                         </div>
 
-                        ${isManager ? `
-                            <button id="btn-open-add-task" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center gap-1.5 transition">
-                                <i class="fa-solid fa-plus-circle text-sm"></i> Đăng Ký Nhiệm Vụ Với BGĐ
-                            </button>
-                        ` : ''}
+                        <!-- NÚT ĐĂNG KÝ CÔNG VIỆC DÀNH CHO CẢ TRƯỞNG PHÒNG VÀ NHÂN VIÊN -->
+                        <button id="btn-open-add-task" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-plus-circle text-sm"></i> ${btnRegisterText}
+                        </button>
                     </div>
 
                     <!-- THỐNG KÊ CARDS -->
@@ -391,7 +391,7 @@ class App {
                 </div>
             </main>
 
-            <!-- MODAL BÁO CÁO TIẾN ĐỘ & UPLOAD MINH CHỨNG (CHO NHÂN VIÊN/TRƯỞNG PHÒNG) -->
+            <!-- MODAL BÁO CÁO TIẾN ĐỘ & UPLOAD MINH CHỨNG -->
             <div id="modal-update-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
@@ -428,15 +428,15 @@ class App {
                 </div>
             </div>
 
-            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC TỰ ĐỘNG DẠNG EXCEL -->
+            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC DẠNG EXCEL MULTI-ROW -->
             <div id="modal-add-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh]">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
                         <div>
                             <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                                <i class="fa-solid fa-file-excel text-emerald-600 text-lg"></i> Đăng Ký Công Việc Tuần Cho BGĐ
+                                <i class="fa-solid fa-file-excel text-emerald-600 text-lg"></i> ${btnRegisterText}
                             </h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Nhập nhiều đầu công việc theo dạng bảng tương tự Excel</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Nhập danh sách công việc cá nhân/đơn vị đăng ký thực hiện trong tuần</p>
                         </div>
                         <button id="close-modal-add" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
                     </div>
@@ -465,7 +465,7 @@ class App {
                             <div class="flex items-center gap-2">
                                 <button type="button" id="btn-cancel-add" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">Hủy</button>
                                 <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-md transition flex items-center gap-1.5">
-                                    <i class="fa-solid fa-paper-plane"></i> Gửi Đăng Ký BGĐ
+                                    <i class="fa-solid fa-paper-plane"></i> Gửi Đăng Ký
                                 </button>
                             </div>
                         </div>
@@ -532,7 +532,6 @@ class App {
             </div>
         `;
 
-        // Mặc định chọn tab "Công việc của tôi" cho người dùng vừa đăng nhập
         this.currentDept = 'MY_TASKS';
 
         this.bindEvents(user);
@@ -612,7 +611,7 @@ class App {
         });
 
         // ========================================================
-        // LOGIC BẢNG ĐĂNG KÝ CÔNG VIỆC DẠNG LƯỚI EXCEL
+        // LOGIC BẢNG ĐĂNG KÝ CÔNG VIỆC DẠNG LƯỚI EXCEL (CẢ TRƯỞNG PHÒNG & NHÂN VIÊN)
         // ========================================================
         const modalAdd = document.getElementById('modal-add-task');
         const btnOpenAdd = document.getElementById('btn-open-add-task');
@@ -680,6 +679,9 @@ class App {
             const deptId = user.deptId || 'HC-TV';
             const deptName = deptId === 'HC-TV' ? 'Hành chính - Tài vụ' : 'Đào tạo - KH & QLSV';
 
+            // Người đứng tên chủ trì chính là người tạo
+            const assigneeName = `${user.fullName} (${user.position})`;
+
             rows.forEach(r => {
                 const title = r.querySelector('.row-title').value.trim();
                 const product = r.querySelector('.row-product').value.trim();
@@ -692,7 +694,7 @@ class App {
                         deadline,
                         dept: deptId,
                         deptName: deptName,
-                        assignee: user.fullName
+                        assignee: assigneeName
                     });
                 }
             });
@@ -722,7 +724,7 @@ class App {
             this.renderTaskTable(user);
         });
 
-        // Sự kiện Modal Báo cáo tiến độ & Minh chứng (Cho Nhân viên/Chủ trì)
+        // Sự kiện Modal Báo cáo tiến độ & Minh chứng
         const modalUpdate = document.getElementById('modal-update-task');
         document.getElementById('close-modal-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
         document.getElementById('btn-cancel-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
@@ -772,7 +774,7 @@ class App {
                 ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><i class="fa-solid fa-spinner mr-1"></i> Đang Làm</span>`
                 : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Hoàn Thành</span>`;
 
-            // Hiển thị Link Minh chứng (Nếu có)
+            // Link Minh chứng
             let proofHtml = '';
             if (task.proofUrl) {
                 proofHtml = `<div class="mt-1 text-xs"><a href="${task.proofUrl}" target="_blank" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1"><i class="fa-solid fa-link text-indigo-500"></i> Xem Minh chứng / File</a></div>`;
@@ -785,7 +787,6 @@ class App {
                 ? `<div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-users text-indigo-500 mr-1"></i> <b>Phối hợp:</b> ${task.coWorkers.join(', ')}</div>`
                 : '';
 
-            // Kiểm tra xem User hiện tại có phải là người nhận trách nhiệm thực hiện hay không
             const isAssignedToMe = task.assignee.includes(user.fullName) || (task.coWorkers && task.coWorkers.some(cw => cw.includes(user.fullName)));
 
             let actionBtnHtml = '';
@@ -808,7 +809,7 @@ class App {
                 <td class="py-3.5 px-4 font-medium text-slate-900">
                     <div>${task.title}</div>
                     ${task.expectedProduct ? `<div class="text-xs text-slate-500 font-normal mt-0.5"><i class="fa-solid fa-box-archive mr-1"></i><b>Sản phẩm:</b> ${task.expectedProduct}</div>` : ''}
-                    ${task.directive ? `<div class="text-xs text-indigo-700 mt-1 bg-indigo-50 p-1.5 rounded border border-indigo-100"><i class="fa-solid fa-bullhorn mr-1"></i><b>BGĐ Chỉ đạo:</b> ${task.directive}</div>` : ''}
+                    ${task.directive ? `<div class="text-xs text-indigo-700 mt-1 bg-indigo-50 p-1.5 rounded border border-indigo-100"><i class="fa-solid fa-bullhorn mr-1"></i><b>Lãnh đạo Chỉ đạo:</b> ${task.directive}</div>` : ''}
                 </td>
                 <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border">${task.deptName}</span></td>
                 <td class="py-3.5 px-4">
@@ -866,7 +867,7 @@ class App {
                 });
             }
 
-            // Nút Cập nhật tiến độ & Minh chứng (Cho Nhân viên hoặc Trưởng phòng)
+            // Nút Cập nhật tiến độ & Minh chứng
             if (tr.querySelector('.btn-update-proof')) {
                 tr.querySelector('.btn-update-proof').addEventListener('click', () => {
                     const modalUpdate = document.getElementById('modal-update-task');
