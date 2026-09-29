@@ -275,7 +275,6 @@ class App {
             ? `<div class="text-xs text-amber-300 font-medium"><i class="fa-solid fa-crown text-[10px]"></i> ${user.position} (Super Admin)</div>`
             : `<div class="text-xs text-indigo-200 font-medium"><i class="fa-solid fa-user-tie text-[10px]"></i> ${user.position}</div>`;
 
-        // Đặt tên tiêu đề nút đăng ký linh hoạt theo chức vụ
         const btnRegisterText = isManager ? 'Đăng Ký Nhiệm Vụ Với BGĐ' : 'Đăng Ký Nhiệm Vụ Với Lãnh Đạo Phòng';
 
         appContainer.innerHTML = `
@@ -337,7 +336,6 @@ class App {
                             <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Đào Tạo - KH & QLSV</button>
                         </div>
 
-                        <!-- NÚT ĐĂNG KÝ CÔNG VIỆC DÀNH CHO CẢ TRƯỞNG PHÒNG VÀ NHÂN VIÊN -->
                         <button id="btn-open-add-task" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center gap-1.5 transition">
                             <i class="fa-solid fa-plus-circle text-sm"></i> ${btnRegisterText}
                         </button>
@@ -428,7 +426,7 @@ class App {
                 </div>
             </div>
 
-            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC DẠNG EXCEL MULTI-ROW -->
+            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC MULTI-ROW -->
             <div id="modal-add-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh]">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
@@ -610,9 +608,7 @@ class App {
             }
         });
 
-        // ========================================================
-        // LOGIC BẢNG ĐĂNG KÝ CÔNG VIỆC DẠNG LƯỚI EXCEL (CẢ TRƯỞNG PHÒNG & NHÂN VIÊN)
-        // ========================================================
+        // LOGIC BẢNG ĐĂNG KÝ CÔNG VIỆC DẠNG LƯỚI EXCEL
         const modalAdd = document.getElementById('modal-add-task');
         const btnOpenAdd = document.getElementById('btn-open-add-task');
         const gridTbody = document.getElementById('task-grid-rows');
@@ -679,7 +675,6 @@ class App {
             const deptId = user.deptId || 'HC-TV';
             const deptName = deptId === 'HC-TV' ? 'Hành chính - Tài vụ' : 'Đào tạo - KH & QLSV';
 
-            // Người đứng tên chủ trì chính là người tạo
             const assigneeName = `${user.fullName} (${user.position})`;
 
             rows.forEach(r => {
@@ -774,7 +769,6 @@ class App {
                 ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><i class="fa-solid fa-spinner mr-1"></i> Đang Làm</span>`
                 : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Hoàn Thành</span>`;
 
-            // Link Minh chứng
             let proofHtml = '';
             if (task.proofUrl) {
                 proofHtml = `<div class="mt-1 text-xs"><a href="${task.proofUrl}" target="_blank" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1"><i class="fa-solid fa-link text-indigo-500"></i> Xem Minh chứng / File</a></div>`;
@@ -789,13 +783,17 @@ class App {
 
             const isAssignedToMe = task.assignee.includes(user.fullName) || (task.coWorkers && task.coWorkers.some(cw => cw.includes(user.fullName)));
 
+            // RÀNG BUỘC PHÂN QUYỀN GIAO VIỆC:
+            // Trưởng/Phó phòng CHỈ được giao việc khi công việc đó thuộc ĐÚNG phòng ban của mình (hoặc là Super Admin)
+            const canManageThisTask = isManager && (user.role === 'SUPER_ADMIN' || user.deptId === task.dept);
+
             let actionBtnHtml = '';
             if (isBGD) {
                 actionBtnHtml = `<button class="btn-directive text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md text-xs font-medium"><i class="fa-solid fa-comment-dots mr-1"></i> Cho chỉ đạo</button>`;
-            } else if (isManager) {
+            } else if (canManageThisTask) {
                 actionBtnHtml = `
                     <div class="flex items-center justify-center gap-1.5">
-                        <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md text-xs font-medium" title="Giao việc"><i class="fa-solid fa-user-plus mr-1"></i> Giao việc</button>
+                        <button class="btn-assign text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md text-xs font-medium" title="Giao việc cho nhân viên phòng"><i class="fa-solid fa-user-plus mr-1"></i> Giao việc</button>
                         <button class="btn-update-proof text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md text-xs font-medium" title="Cập nhật minh chứng"><i class="fa-solid fa-pen-to-square"></i></button>
                     </div>
                 `;
@@ -835,13 +833,14 @@ class App {
                 });
             }
 
-            // Nút Trưởng phòng giao việc
-            if (isManager && tr.querySelector('.btn-assign')) {
+            // Nút Trưởng phòng giao việc (RÀNG BUỘC CHỈ ĐỔ DÒNG NHÂN SỰ THUỘC ĐÚNG PHÒNG ĐÓ)
+            if (canManageThisTask && tr.querySelector('.btn-assign')) {
                 tr.querySelector('.btn-assign').addEventListener('click', () => {
                     const modalAssign = document.getElementById('modal-assign-task');
                     document.getElementById('assign-task-id').value = task.id;
                     document.getElementById('assign-task-title-display').innerText = task.title;
 
+                    // Chỉ lấy danh sách nhân viên thuộc ĐÚNG phòng ban của công việc đó
                     const deptUsers = this.authService.getUsersByDept(task.dept);
                     const selectMain = document.getElementById('assign-main-user');
                     const selectCo = document.getElementById('assign-coworkers');
