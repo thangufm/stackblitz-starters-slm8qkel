@@ -18,7 +18,6 @@ class AuthService {
         if (savedUsers) {
             this.users = JSON.parse(savedUsers).map(u => new User(u.email, u.fullName, u.position, u.deptId, u.role, u.password));
         } else {
-            // Danh sách nhân sự thực tế UFM Quảng Ngãi
             this.users = [
                 // Ban Giám đốc
                 new User('yenlinhbt@ufm.edu.vn', 'Bùi Thị Yến Linh', 'Giám đốc Phân hiệu', 'BGD', 'ADMIN_BGD'),
@@ -94,12 +93,12 @@ class Task {
         this.title = title;
         this.dept = dept;
         this.deptName = deptName;
-        this.assignee = assignee;         // Người chủ trì/phụ trách chính
-        this.coWorkers = coWorkers;       // Danh sách người phối hợp (Mảng tên)
-        this.deadline = deadline;         // Định dạng YYYY-MM-DD
-        this.status = status;             // 'DOING', 'DONE', 'LATE'
-        this.directive = directive;       // Chỉ đạo BGĐ
-        this.expectedProduct = expectedProduct; // Sản phẩm / Kết quả dự kiến
+        this.assignee = assignee;
+        this.coWorkers = coWorkers;
+        this.deadline = deadline;
+        this.status = status;
+        this.directive = directive;
+        this.expectedProduct = expectedProduct;
     }
 
     setDirective(text) {
@@ -201,7 +200,6 @@ class App {
         }
     }
 
-    // --- MÀN HÌNH ĐĂNG NHẬP ---
     renderLoginView() {
         const appContainer = document.getElementById('app-root') || document.body;
         appContainer.innerHTML = `
@@ -248,16 +246,10 @@ class App {
         });
     }
 
-    // --- MÀN HÌNH DASHBOARD DASHBOARD ---
     renderDashboardView(user) {
         const appContainer = document.getElementById('app-root') || document.body;
         const isBGD = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_BGD';
         const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
-
-        // Tự động lọc phòng tương ứng khi Trưởng phòng đăng nhập
-        if (!isBGD && user.deptId) {
-            this.currentDept = user.deptId;
-        }
 
         let roleBadgeHtml = user.role === 'SUPER_ADMIN'
             ? `<div class="text-xs text-amber-300 font-medium"><i class="fa-solid fa-crown text-[10px]"></i> ${user.position} (Super Admin)</div>`
@@ -290,14 +282,14 @@ class App {
 
             <!-- CONTENT -->
             <main class="max-w-7xl mx-auto px-4 py-8">
-                <!-- KHU VỰC BỘ LỌC NGÀY THÁNG & NÚT TÁC VỤ -->
+                <!-- KHU VỰC BỘ LỌC CÔNG VIỆC -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 mb-6">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
                         <div>
                             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                <i class="fa-solid fa-chart-line text-indigo-600"></i> Quản Lý & Đăng Ký Công Việc Tuần
+                                <i class="fa-solid fa-chart-line text-indigo-600"></i> Bảng Điều Khiển Tổng Quan Công Việc
                             </h2>
-                            <p class="text-xs text-slate-500 mt-1">Lọc theo khoảng thời gian và giao việc trực tiếp cho nhân sự thuộc phòng</p>
+                            <p class="text-xs text-slate-500 mt-1">Theo dõi và quản lý danh sách công việc toàn Phân hiệu</p>
                         </div>
 
                         <!-- 1. BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... -->
@@ -311,18 +303,13 @@ class App {
                         </div>
                     </div>
 
-                    <!-- 2. NÚT ĐĂNG KÝ NHIỆM VỤ DÀNH CHO TRƯỞNG PHÒNG -->
+                    <!-- 2. MENU NÚT CHỌN LỌC PHÒNG BAN VÀ ĐĂNG KÝ MỚI -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
+                        <!-- CÁC NÚT BẤM CHUYỂN PHÒNG BAN -->
                         <div class="flex items-center gap-2">
-                            ${isBGD ? `
-                                <button data-dept="ALL" class="dept-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white">Tất Cả</button>
-                                <button data-dept="HC-TV" class="dept-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-600">Hành Chính - Tài Vụ</button>
-                                <button data-dept="DT-QLSV" class="dept-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-600">Đào Tạo - KH & QLSV</button>
-                            ` : `
-                                <span class="px-3 py-1.5 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100">
-                                    <i class="fa-solid fa-building mr-1"></i> Đơn vị: ${user.deptId === 'HC-TV' ? 'Phòng Hành chính - Tài vụ' : 'Phòng Đào tạo - KH & QLSV'}
-                                </span>
-                            `}
+                            <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition">Tất Cả Phòng Ban</button>
+                            <button data-dept="HC-TV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Hành Chính - Tài Vụ</button>
+                            <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Đào Tạo - KH & QLSV</button>
                         </div>
 
                         ${isManager ? `
@@ -335,19 +322,19 @@ class App {
                     <!-- THỐNG KÊ CARDS -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
-                            <div><div class="text-[11px] font-semibold text-slate-400">TỔNG NHIỆM VỤ</div><div id="stat-total" class="text-xl font-bold text-slate-800">0</div></div>
+                            <div><div class="text-[11px] font-semibold text-slate-400 uppercase">TỔNG CÔNG VIỆC</div><div id="stat-total" class="text-xl font-bold text-slate-800">0</div></div>
                             <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><i class="fa-solid fa-list-check"></i></div>
                         </div>
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
-                            <div><div class="text-[11px] font-semibold text-slate-400">ĐANG THỰC HIỆN</div><div id="stat-doing" class="text-xl font-bold text-amber-600">0</div></div>
+                            <div><div class="text-[11px] font-semibold text-slate-400 uppercase">ĐANG THỰC HIỆN</div><div id="stat-doing" class="text-xl font-bold text-amber-600">0</div></div>
                             <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm"><i class="fa-solid fa-spinner"></i></div>
                         </div>
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
-                            <div><div class="text-[11px] font-semibold text-slate-400">ĐÃ HOÀN THÀNH</div><div id="stat-done" class="text-xl font-bold text-emerald-600">0</div></div>
+                            <div><div class="text-[11px] font-semibold text-slate-400 uppercase">ĐÃ HOÀN THÀNH</div><div id="stat-done" class="text-xl font-bold text-emerald-600">0</div></div>
                             <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm"><i class="fa-solid fa-circle-check"></i></div>
                         </div>
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
-                            <div><div class="text-[11px] font-semibold text-slate-400">CẢNH BÁO TRỄ HẠN</div><div id="stat-late" class="text-xl font-bold text-rose-600">0</div></div>
+                            <div><div class="text-[11px] font-semibold text-slate-400 uppercase">CẢNH BÁO TRỄ HẠN</div><div id="stat-late" class="text-xl font-bold text-rose-600">0</div></div>
                             <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-sm"><i class="fa-solid fa-triangle-exclamation"></i></div>
                         </div>
                     </div>
@@ -408,7 +395,7 @@ class App {
                 </div>
             </div>
 
-            <!-- MODAL GIAO NHIỆM VỤ CẤP PHÒNG (3. GIAO CÁ NHÂN & PHỐI HỢP) -->
+            <!-- MODAL GIAO NHIỆM VỤ CẤP PHÒNG -->
             <div id="modal-assign-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                     <div class="flex justify-between items-center mb-4">
@@ -472,6 +459,20 @@ class App {
     }
 
     bindEvents(user) {
+        // Lắng nghe Lọc Phòng Ban
+        document.querySelectorAll('.dept-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.dept-btn').forEach(b => {
+                    b.className = "dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+                });
+                const targetBtn = e.currentTarget;
+                targetBtn.className = "dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition";
+                
+                this.currentDept = targetBtn.getAttribute('data-dept');
+                this.renderTaskTable(user);
+            });
+        });
+
         // Lắng nghe Lọc ngày
         document.getElementById('btn-apply-date').addEventListener('click', () => {
             this.startDate = document.getElementById('filter-start-date').value;
