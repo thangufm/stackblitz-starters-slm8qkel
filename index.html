@@ -1,364 +1,251 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản Lý Công Việc - Firebase & StackBlitz</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Công Việc - Ban Giám Đốc</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-  </head>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <body class="bg-gray-100 min-h-screen">
-    <div class="max-w-4xl mx-auto p-4 sm:p-6">
-      <!-- Header -->
-      <header
-        class="flex justify-between items-center bg-white p-4 rounded-lg shadow mb-6"
-      >
-        <h1 class="text-2xl font-bold text-gray-800">📋 Quản Lý Công Việc 1.166</h1>
-        <div id="userInfo" class="hidden flex items-center space-x-3">
-          <span id="userEmail" class="text-sm font-medium text-gray-600"></span>
-          <button
-            id="logoutBtn"
-            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded"
-          >
-            Đăng xuất
-          </button>
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-layer-group text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">QUẢN LÝ CÔNG VIỆC</h1>
+                    <p class="text-xs text-indigo-200">Phân hiệu UFM tại Quảng Ngãi</p>
+                </div>
+            </div>
+
+            <!-- User Info / Super Admin Badge -->
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-semibold text-white">Phạm Ngọc Thắng</p>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-400 text-amber-950">
+                        <i class="fa-solid fa-crown mr-1"></i> Super Admin / BGĐ
+                    </span>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-indigo-700 border-2 border-indigo-400 flex items-center justify-center font-bold text-white shadow">
+                    PNT
+                </div>
+                <button title="Đăng xuất" class="text-indigo-200 hover:text-white p-2 rounded-lg hover:bg-indigo-800 transition">
+                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                </button>
+            </div>
         </div>
-      </header>
+    </header>
 
-      <!-- Màn hình Đăng nhập / Đăng ký -->
-      <div
-        id="authContainer"
-        class="bg-white p-6 rounded-lg shadow max-w-md mx-auto"
-      >
-        <h2 id="authTitle" class="text-xl font-semibold mb-4 text-center">
-          Đăng Nhập
-        </h2>
-        <form id="authForm" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              id="authEmail"
-              required
-              class="w-full border rounded p-2 mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Mật khẩu</label
-            >
-            <input
-              type="password"
-              id="authPassword"
-              required
-              class="w-full border rounded p-2 mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-          <p id="authError" class="text-red-500 text-sm hidden"></p>
-          <button
-            type="submit"
-            id="authSubmitBtn"
-            class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-          >
-            Đăng Nhập
-          </button>
-        </form>
-        <div class="mt-4 text-center text-sm">
-          <span id="toggleAuthText">Chưa có tài khoản?</span>
-          <button
-            id="toggleAuthBtn"
-            class="text-blue-600 font-semibold ml-1 underline"
-          >
-            Đăng ký ngay
-          </button>
-        </div>
-      </div>
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
 
-      <!-- Dashboard Quản lý công việc -->
-      <div id="appContainer" class="hidden space-y-6">
-        <!-- Form Thêm Công Việc -->
-        <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-lg font-semibold mb-4 text-gray-700">
-            Thêm Công Việc Mới
-          </h2>
-          <form id="addTaskForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="sm:col-span-2">
-              <input
-                type="text"
-                id="taskTitle"
-                placeholder="Tên công việc..."
-                required
-                class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-              />
+        <!-- DASHBOARD HEADER & FILTERS -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-600"></i>
+                        Bảng Điều Khiển Tổng Quan Công Việc
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-0.5">Theo dõi tiến độ đăng ký và thực hiện công việc tuần của các Phòng/Ban</p>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Tuần Selector -->
+                    <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+                        <button class="p-1.5 hover:bg-white rounded-md text-slate-600 shadow-sm transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                        <span class="px-3 text-xs font-semibold text-slate-700">Tuần 39 (28/09 - 04/10/2026)</span>
+                        <button class="p-1.5 hover:bg-white rounded-md text-slate-600 shadow-sm transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    </div>
+
+                    <!-- Export Report -->
+                    <button class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo Tuần
+                    </button>
+                </div>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1"
-                >Hạn chót</label
-              >
-              <input
-                type="date"
-                id="taskDueDate"
-                class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-              />
+
+            <!-- TAB LỌC PHÒNG BAN -->
+            <div class="mt-5 border-t border-slate-100 pt-4 flex flex-wrap gap-2">
+                <button class="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition">
+                    <i class="fa-solid fa-building mr-1"></i> Tất Cả Phòng Ban (2)
+                </button>
+                <button class="px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                    Hành Chính - Tài Vụ
+                </button>
+                <button class="px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                    Đào Tạo - Khoa Học & QLSV
+                </button>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1"
-                >Mức độ ưu tiên</label
-              >
-              <select
-                id="taskPriority"
-                class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                <option value="Thấp">Thấp</option>
-                <option value="Trung bình" selected>Trung bình</option>
-                <option value="Cao">Cao</option>
-              </select>
-            </div>
-            <div class="sm:col-span-2">
-              <button
-                type="submit"
-                class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-medium"
-              >
-                + Thêm Công Việc
-              </button>
-            </div>
-          </form>
         </div>
 
-        <!-- Danh sách Công Việc -->
-        <div class="bg-white p-6 rounded-lg shadow">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-700">
-              Danh Sách Công Việc
-            </h2>
-            <select id="filterStatus" class="border rounded p-1 text-sm">
-              <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Chưa hoàn thành</option>
-              <option value="completed">Đã hoàn thành</option>
-            </select>
-          </div>
-          <div id="taskList" class="space-y-3">
-            <p class="text-gray-500 text-center py-4">Đang tải công việc...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FIREBASE CONFIG & LOGIC -->
-    <script type="module">
-      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-      import {
-        getAuth,
-        createUserWithEmailAndPassword,
-        signInWithEmailAndPassword,
-        signOut,
-        onAuthStateChanged,
-      } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-      import {
-        getFirestore,
-        collection,
-        addDoc,
-        query,
-        where,
-        onSnapshot,
-        doc,
-        updateDoc,
-        deleteDoc,
-        serverTimestamp,
-      } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-      // Cấu hình Firebase dự án "quanlycongviec-651b6"
-      const firebaseConfig = {
-        apiKey: 'AIzaSyBYjORDaQLmPwfAFhqRTwAi-ufVec8qd_0',
-        authDomain: 'quanlycongviec-651b6.firebaseapp.com',
-        projectId: 'quanlycongviec-651b6',
-        storageBucket: 'quanlycongviec-651b6.firebasestorage.app',
-        messagingSenderId: '775368483539',
-        appId: '1:775368483539:web:c9464d5f59c3104fe2aa26',
-      };
-
-      // Khởi tạo Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-
-      // DOM Elements
-      const authContainer = document.getElementById('authContainer');
-      const appContainer = document.getElementById('appContainer');
-      const userInfo = document.getElementById('userInfo');
-      const userEmail = document.getElementById('userEmail');
-      const authForm = document.getElementById('authForm');
-      const authTitle = document.getElementById('authTitle');
-      const authSubmitBtn = document.getElementById('authSubmitBtn');
-      const toggleAuthBtn = document.getElementById('toggleAuthBtn');
-      const toggleAuthText = document.getElementById('toggleAuthText');
-      const authError = document.getElementById('authError');
-      const logoutBtn = document.getElementById('logoutBtn');
-      const addTaskForm = document.getElementById('addTaskForm');
-      const taskList = document.getElementById('taskList');
-      const filterStatus = document.getElementById('filterStatus');
-
-      let currentUser = null;
-      let isLoginState = true;
-      let unsubscribeSnapshot = null;
-      let allTasks = [];
-
-      // --- AUTHENTICATION ---
-      toggleAuthBtn.addEventListener('click', () => {
-        isLoginState = !isLoginState;
-        authTitle.textContent = isLoginState
-          ? 'Đăng Nhập'
-          : 'Đăng Ký Tài Khoản';
-        authSubmitBtn.textContent = isLoginState
-          ? 'Đăng Nhập'
-          : 'Tạo Tài Khoản';
-        toggleAuthText.textContent = isLoginState
-          ? 'Chưa có tài khoản?'
-          : 'Đã có tài khoản?';
-        toggleAuthBtn.textContent = isLoginState ? 'Đăng ký ngay' : 'Đăng nhập';
-        authError.classList.add('hidden');
-      });
-
-      authForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('authEmail').value;
-        const password = document.getElementById('authPassword').value;
-        authError.classList.add('hidden');
-
-        try {
-          if (isLoginState) {
-            await signInWithEmailAndPassword(auth, email, password);
-          } else {
-            await createUserWithEmailAndPassword(auth, email, password);
-          }
-        } catch (err) {
-          authError.textContent = err.message;
-          authError.classList.remove('hidden');
-        }
-      });
-
-      logoutBtn.addEventListener('click', () => signOut(auth));
-
-      // Kiểm tra trạng thái đăng nhập
-      onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-        if (user) {
-          userEmail.textContent = user.email;
-          authContainer.classList.add('hidden');
-          appContainer.classList.remove('hidden');
-          userInfo.classList.remove('hidden');
-          listenToTasks();
-        } else {
-          if (unsubscribeSnapshot) unsubscribeSnapshot();
-          authContainer.classList.remove('hidden');
-          appContainer.classList.add('hidden');
-          userInfo.classList.add('hidden');
-          taskList.innerHTML = '';
-        }
-      });
-
-      // --- THÊM CÔNG VIỆC CỦA USER ---
-      addTaskForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const title = document.getElementById('taskTitle').value;
-        const dueDate = document.getElementById('taskDueDate').value;
-        const priority = document.getElementById('taskPriority').value;
-
-        try {
-          await addDoc(collection(db, 'tasks'), {
-            userId: currentUser.uid,
-            title: title,
-            dueDate: dueDate || 'Không xác định',
-            priority: priority,
-            completed: false,
-            createdAt: serverTimestamp(),
-          });
-          addTaskForm.reset();
-        } catch (err) {
-          alert('Lỗi thêm công việc: ' + err.message);
-        }
-      });
-
-      // --- LẤY DANH SÁCH REAL-TIME TỪ FIRESTORE ---
-      function listenToTasks() {
-        const q = query(
-          collection(db, 'tasks'),
-          where('userId', '==', currentUser.uid)
-        );
-
-        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-          allTasks = [];
-          snapshot.forEach((docSnap) => {
-            allTasks.push({ id: docSnap.id, ...docSnap.data() });
-          });
-          renderTasks();
-        });
-      }
-
-      // Hiển thị danh sách công việc
-      function renderTasks() {
-        const filter = filterStatus.value;
-        const filtered = allTasks.filter((t) => {
-          if (filter === 'pending') return !t.completed;
-          if (filter === 'completed') return t.completed;
-          return true;
-        });
-
-        if (filtered.length === 0) {
-          taskList.innerHTML =
-            '<p class="text-gray-400 text-center py-4">Chưa có công việc nào.</p>';
-          return;
-        }
-
-        const priorityBadge = (p) => {
-          if (p === 'Cao')
-            return '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">Cao</span>';
-          if (p === 'Trung bình')
-            return '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-semibold">Trung bình</span>';
-          return '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Thấp</span>';
-        };
-
-        taskList.innerHTML = filtered
-          .map(
-            (task) => `
-        <div class="flex items-center justify-between p-3 border rounded-lg ${
-          task.completed ? 'bg-gray-50 opacity-75' : 'bg-white'
-        }">
-          <div class="flex items-center space-x-3">
-            <input type="checkbox" ${task.completed ? 'checked' : ''} 
-              onchange="toggleTask('${task.id}', ${!task.completed})"
-              class="w-5 h-5 text-blue-600 rounded cursor-pointer">
-            <div>
-              <p class="font-medium ${
-                task.completed ? 'line-through text-gray-500' : 'text-gray-800'
-              }">${task.title}</p>
-              <div class="text-xs text-gray-500 flex items-center space-x-2 mt-1">
-                <span>📅 ${task.dueDate}</span>
-                ${priorityBadge(task.priority)}
-              </div>
+        <!-- STATS KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Card 1 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase">Tổng Công Việc Tuần</p>
+                    <p class="text-2xl font-bold text-slate-800 mt-1">18</p>
+                    <span class="text-[11px] text-slate-400">Đã đăng ký trong tuần</span>
+                </div>
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
             </div>
-          </div>
-          <button onclick="deleteTask('${
-            task.id
-          }')" class="text-red-500 hover:text-red-700 text-sm p-1">🗑️ Xóa</button>
+
+            <!-- Card 2 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase">Đang Thực Hiện</p>
+                    <p class="text-2xl font-bold text-amber-600 mt-1">7</p>
+                    <span class="text-[11px] text-amber-600 font-medium">Đang trong tiến độ</span>
+                </div>
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase">Đã Hoàn Thành</p>
+                    <p class="text-2xl font-bold text-emerald-600 mt-1">9</p>
+                    <span class="text-[11px] text-emerald-600 font-medium">Đạt 50% kế hoạch</span>
+                </div>
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase">Cảnh Báo Trễ Hạn</p>
+                    <p class="text-2xl font-bold text-rose-600 mt-1">2</p>
+                    <span class="text-[11px] text-rose-600 font-medium">Cần BGĐ chỉ đạo</span>
+                </div>
+                <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
         </div>
-      `
-          )
-          .join('');
-      }
 
-      filterStatus.addEventListener('change', renderTasks);
+        <!-- DANH SÁCH CÔNG VIỆC THEO PHÒNG BAN -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-tasks text-indigo-600"></i>
+                    Danh Sách Công Việc Đăng Ký Trong Tuần
+                </h3>
+                <span class="text-xs text-slate-500">Hiển thị 18 công việc</span>
+            </div>
 
-      // Xử lý các sự kiện toàn cục
-      window.toggleTask = async (id, newStatus) => {
-        await updateDoc(doc(db, 'tasks', id), { completed: newStatus });
-      };
+            <!-- TABLE -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 uppercase text-[11px]">
+                            <th class="py-3 px-4">Tên Công Việc</th>
+                            <th class="py-3 px-4">Phòng Ban Chịu Trách Nhiệm</th>
+                            <th class="py-3 px-4">Người Phụ Trách</th>
+                            <th class="py-3 px-4">Thời Hạn (Deadline)</th>
+                            <th class="py-3 px-4">Trạng Thái</th>
+                            <th class="py-3 px-4 text-center">Chỉ Đạo BGĐ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-normal text-slate-700">
+                        <!-- ROW 1: Trễ hạn (Cảnh báo đỏ) -->
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="py-3.5 px-4 font-medium text-slate-900">
+                                Báo cáo kiểm kê tài sản & hạ tầng CNTT Quý 3/2026
+                            </td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                    Hành chính - Tài vụ
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4">Phạm Ngọc Thắng</td>
+                            <td class="py-3.5 px-4 text-rose-600 font-medium">30/09/2026 (Đã quá hạn)</td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                                    <i class="fa-solid fa-circle text-[8px]"></i> Trễ Hạn
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-center">
+                                <button class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition">
+                                    <i class="fa-solid fa-comment-dots mr-1"></i> Ghi chỉ đạo
+                                </button>
+                            </td>
+                        </tr>
 
-      window.deleteTask = async (id) => {
-        if (confirm('Bạn có chắc chắn muốn xóa công việc này?')) {
-          await deleteDoc(doc(db, 'tasks', id));
-        }
-      };
-    </script>
-  </body>
+                        <!-- ROW 2: Đang làm -->
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="py-3.5 px-4 font-medium text-slate-900">
+                                Lập danh sách sinh viên xét học bổng học kỳ 1
+                            </td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                                    Đào tạo - KH & QLSV
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4">Nguyễn Văn A</td>
+                            <td class="py-3.5 px-4">02/10/2026</td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                                    <i class="fa-solid fa-circle text-[8px]"></i> Đang Làm
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-center">
+                                <button class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition">
+                                    <i class="fa-solid fa-comment-dots mr-1"></i> Ghi chỉ đạo
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- ROW 3: Hoàn thành -->
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="py-3.5 px-4 font-medium text-slate-900">
+                                Triển khai bảo trì mạng Wifi các dãy phòng học
+                            </td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                    Hành chính - Tài vụ
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4">Phạm Ngọc Thắng</td>
+                            <td class="py-3.5 px-4">28/09/2026</td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                    <i class="fa-solid fa-circle text-[8px]"></i> Hoàn Thành
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-center">
+                                <button class="text-slate-400 hover:text-indigo-600 font-medium text-xs bg-slate-50 px-2.5 py-1 rounded-md transition">
+                                    <i class="fa-solid fa-eye mr-1"></i> Xem chỉ đạo
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500">
+        © 2026 Phân hiệu Trường Đại học Tài chính - Marketing tại tỉnh Quảng Ngãi. Hệ thống quản lý công việc nội bộ.
+    </footer>
+
+</body>
 </html>
