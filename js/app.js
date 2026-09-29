@@ -224,9 +224,19 @@ class App {
     renderDashboardView(user) {
         const appContainer = document.getElementById('app-root') || document.body;
         
+        // Kiểm tra quyền chỉ đạo BGĐ
         const isBGD = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_BGD';
-        const roleTitle = isBGD ? 'Super Admin / BGĐ' : user.position;
-
+        
+        // Xử lý hiển thị nhãn chức danh chính xác:
+        // Nếu là Super Admin (phamngocthang@ufm.edu.vn) -> Hiển thị "Chuyên viên chính (Super Admin)"
+        // Nếu là BGĐ (Bùi Thị Yến Linh, Lê Xuân Lãm) -> Hiển thị "Giám đốc Phân hiệu", "Phó Giám đốc Phân hiệu"
+        let roleBadgeHtml = '';
+        if (user.role === 'SUPER_ADMIN') {
+            roleBadgeHtml = `<div class="text-xs text-amber-300 font-medium"><i class="fa-solid fa-crown text-[10px]"></i> ${user.position} (Super Admin)</div>`;
+        } else {
+            roleBadgeHtml = `<div class="text-xs text-indigo-200 font-medium"><i class="fa-solid fa-user-tie text-[10px]"></i> ${user.position}</div>`;
+        }
+    
         appContainer.innerHTML = `
             <!-- HEADER -->
             <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-30">
@@ -240,17 +250,17 @@ class App {
                             <p class="text-xs text-indigo-200">Phân hiệu UFM tại Quảng Ngãi</p>
                         </div>
                     </div>
-
+    
                     <div class="flex items-center gap-4">
                         <div class="text-right hidden sm:block">
                             <div class="font-semibold text-sm">${user.fullName}</div>
-                            <div class="text-xs text-amber-300"><i class="fa-solid fa-crown text-[10px]"></i> ${roleTitle}</div>
+                            ${roleBadgeHtml}
                         </div>
-
+    
                         <button id="btn-change-pass" title="Đổi mật khẩu" class="p-2 bg-indigo-800 hover:bg-indigo-700 rounded-lg text-indigo-100 transition text-xs font-medium flex items-center gap-1.5 px-3">
                             <i class="fa-solid fa-key"></i> <span class="hidden sm:inline">Đổi Mật Khẩu</span>
                         </button>
-
+    
                         <button id="btn-logout" title="Đăng xuất" class="p-2 bg-rose-600/80 hover:bg-rose-600 rounded-lg text-white transition text-xs font-medium flex items-center gap-1.5 px-3">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline">Thoát</span>
                         </button>
