@@ -161,7 +161,6 @@ class TaskService {
         return list;
     }
 
-    // Đếm số lượng công việc chưa giao theo từng phòng ban
     getUnassignedCountByDept(deptCode) {
         if (deptCode === 'ALL') {
             return this.tasks.filter(t => t.status === 'WAITING_ASSIGN').length;
@@ -249,7 +248,7 @@ class App {
                     <form id="login-form" class="space-y-5">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Email UFM</label>
-                            <input type="email" id="login-email" required placeholder="tranthibichlien@ufm.edu.vn" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="email" id="login-email" required placeholder="yenlinhbt@ufm.edu.vn" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Mật khẩu</label>
@@ -281,7 +280,7 @@ class App {
 
     renderDashboardView(user) {
         const appContainer = document.getElementById('app-root') || document.body;
-        const isBGD = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_BGD';
+        const isBGD = user.role === 'ADMIN_BGD' || user.position.includes('Giám đốc') || user.position.includes('Phó Giám đốc');
         const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
 
         let roleBadgeHtml = user.role === 'SUPER_ADMIN'
@@ -341,11 +340,13 @@ class App {
                     <!-- TAB DÂN CƯ VÀ NÚT ĐĂNG KÝ CÔNG VIỆC -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
                         <div class="flex items-center gap-2.5 overflow-x-auto pb-1">
-                            <button data-dept="MY_TASKS" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5 relative">
-                                <i class="fa-solid fa-user-check"></i> Công Việc Của Tôi
-                            </button>
+                            ${!isBGD ? `
+                                <button data-dept="MY_TASKS" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5 relative">
+                                    <i class="fa-solid fa-user-check"></i> Công Việc Của Tôi
+                                </button>
+                            ` : ''}
                             
-                            <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1.5 relative">
+                            <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg ${isBGD ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} transition flex items-center gap-1.5 relative">
                                 Tất Cả Phòng Ban
                                 <span id="badge-dept-ALL" class="hidden px-1.5 py-0.5 text-[10px] font-bold bg-rose-500 text-white rounded-full shadow-sm">0</span>
                             </button>
@@ -361,9 +362,11 @@ class App {
                             </button>
                         </div>
 
-                        <button id="btn-open-add-task" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center gap-1.5 transition">
-                            <i class="fa-solid fa-plus-circle text-sm"></i> ${btnRegisterText}
-                        </button>
+                        ${!isBGD ? `
+                            <button id="btn-open-add-task" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center gap-1.5 transition">
+                                <i class="fa-solid fa-plus-circle text-sm"></i> ${btnRegisterText}
+                            </button>
+                        ` : ''}
                     </div>
 
                     <!-- THỐNG KÊ CARDS -->
@@ -555,7 +558,8 @@ class App {
             </div>
         `;
 
-        this.currentDept = 'MY_TASKS';
+        // Ban Giám đốc sẽ mặc định chọn Tab "ALL" (Tất cả phòng ban)
+        this.currentDept = isBGD ? 'ALL' : 'MY_TASKS';
 
         this.bindEvents(user);
         this.renderTaskTable(user);
@@ -577,7 +581,7 @@ class App {
     }
 
     bindEvents(user) {
-        // Lắng nghe Lọc Phòng Ban / Công Việc CỦA TÔI
+        // Lắng nghe Lọc Phòng Ban
         document.querySelectorAll('.dept-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.dept-btn').forEach(b => {
@@ -700,47 +704,56 @@ class App {
             });
         }
 
-        document.getElementById('btn-add-grid-row').addEventListener('click', () => {
-            const nextStt = gridTbody.children.length + 1;
-            gridTbody.appendChild(createGridRow(nextStt));
-        });
+        const btnAddRow = document.getElementById('btn-add-grid-row');
+        if (btnAddRow) {
+            btnAddRow.addEventListener('click', () => {
+                const nextStt = gridTbody.children.length + 1;
+                gridTbody.appendChild(createGridRow(nextStt));
+            });
+        }
 
-        document.getElementById('close-modal-add').addEventListener('click', () => modalAdd.classList.add('hidden'));
-        document.getElementById('btn-cancel-add').addEventListener('click', () => modalAdd.classList.add('hidden'));
+        const closeAdd = document.getElementById('close-modal-add');
+        if (closeAdd) closeAdd.addEventListener('click', () => modalAdd.classList.add('hidden'));
+        
+        const cancelAdd = document.getElementById('btn-cancel-add');
+        if (cancelAdd) cancelAdd.addEventListener('click', () => modalAdd.classList.add('hidden'));
 
-        document.getElementById('form-add-task-grid').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const rows = Array.from(gridTbody.querySelectorAll('.grid-row'));
-            const tasksToAdd = [];
-            const deptId = user.deptId || 'HC-TV';
-            const deptName = deptId === 'HC-TV' ? 'Hành chính - Tài vụ' : 'Đào tạo - KH & QLSV';
+        const formAddGrid = document.getElementById('form-add-task-grid');
+        if (formAddGrid) {
+            formAddGrid.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const rows = Array.from(gridTbody.querySelectorAll('.grid-row'));
+                const tasksToAdd = [];
+                const deptId = user.deptId || 'HC-TV';
+                const deptName = deptId === 'HC-TV' ? 'Hành chính - Tài vụ' : 'Đào tạo - KH & QLSV';
 
-            const isStaff = user.role === 'STAFF';
-            const assigneeName = `${user.fullName} (${user.position})`;
+                const isStaff = user.role === 'STAFF';
+                const assigneeName = `${user.fullName} (${user.position})`;
 
-            rows.forEach(r => {
-                const title = r.querySelector('.row-title').value.trim();
-                const product = r.querySelector('.row-product').value.trim();
-                const deadline = r.querySelector('.row-deadline').value;
+                rows.forEach(r => {
+                    const title = r.querySelector('.row-title').value.trim();
+                    const product = r.querySelector('.row-product').value.trim();
+                    const deadline = r.querySelector('.row-deadline').value;
 
-                if (title && deadline) {
-                    tasksToAdd.push({
-                        title,
-                        expectedProduct: product,
-                        deadline,
-                        dept: deptId,
-                        deptName: deptName,
-                        assignee: assigneeName
-                    });
+                    if (title && deadline) {
+                        tasksToAdd.push({
+                            title,
+                            expectedProduct: product,
+                            deadline,
+                            dept: deptId,
+                            deptName: deptName,
+                            assignee: assigneeName
+                        });
+                    }
+                });
+
+                if (tasksToAdd.length > 0) {
+                    this.taskService.addMultipleTasks(tasksToAdd, isStaff);
+                    modalAdd.classList.add('hidden');
+                    this.renderTaskTable(user);
                 }
             });
-
-            if (tasksToAdd.length > 0) {
-                this.taskService.addMultipleTasks(tasksToAdd, isStaff);
-                modalAdd.classList.add('hidden');
-                this.renderTaskTable(user);
-            }
-        });
+        }
 
         // Sự kiện Modal Giao việc
         const modalAssign = document.getElementById('modal-assign-task');
@@ -779,14 +792,13 @@ class App {
     }
 
     renderTaskTable(user) {
-        // Cập nhật số đếm đỏ trên các Tab Phòng Ban
         this.updateDeptBadges();
 
         const tbody = document.getElementById('task-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        const isBGD = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_BGD';
+        const isBGD = user.role === 'ADMIN_BGD' || user.position.includes('Giám đốc') || user.position.includes('Phó Giám đốc');
         const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
 
         let tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName);
