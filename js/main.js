@@ -1,5 +1,5 @@
 import { AuthService } from './services/auth-service.js';
-import { DeptService } from './services/dept-service.js'; // <-- Thêm dòng này
+import { DeptService } from './services/dept-service.js';
 import { TaskService } from './services/task-service.js';
 import { NavbarComponent } from './components/navbar.js';
 import { AuthViewComponent } from './components/auth-view.js';
@@ -7,21 +7,25 @@ import { TaskListComponent } from './components/task-list.js';
 import { TaskFormComponent } from './components/task-form.js';
 
 class App {
-    async init() {
-        // Tự động khởi tạo danh sách 3 phòng ban nếu Firebase chưa có
-        try {
-            await DeptService.initDefaultDepartments();
-        } catch (err) {
-            console.error("Chưa khởi tạo được phòng ban:", err);
-        }
+    constructor() {
+        this.currentUser = null;
+        this.unsubscribeTasks = null;
+        this.tasks = [];
+    }
 
-        // Kiểm tra phiên đăng nhập hiện tại từ LocalStorage
+    async init() {
+        // 1. Thử khởi tạo danh sách phòng ban ngầm (không chặn luồng giao diện)
+        DeptService.initDefaultDepartments().catch(err => {
+            console.warn("Không thể đồng bộ phòng ban với Firebase:", err);
+        });
+
+        // 2. Lấy phiên đăng nhập hiện tại từ LocalStorage
         this.currentUser = AuthService.getCurrentUser();
 
-        // Render Navbar
+        // 3. Render Navbar ngay lập tức
         this.renderNavbar();
 
-        // Chuyển hướng giao diện
+        // 4. Chuyển hướng màn hình chính
         if (this.currentUser) {
             this.loadDashboard();
         } else {
