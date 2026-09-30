@@ -3,128 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Đăng Ký User - Firebase Realtime Database</title>
+    <title>Hệ Thống Quản Lý Công Việc - Phân Hiệu UFM</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-    <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 max-w-md w-full">
-        <h1 class="text-xl font-bold text-slate-800 text-center mb-1">Kiểm Tra Kết Nối Firebase</h1>
-        <p class="text-xs text-slate-500 text-center mb-6">Thử nghiệm đăng ký tài khoản vào Realtime Database</p>
+    <!-- Thanh Navigation -->
+    <div id="navbar-container"></div>
 
-        <!-- Trạng thái kết nối Firebase -->
-        <div id="connection-status" class="mb-4 p-3 rounded-xl bg-amber-50 text-amber-700 text-xs font-medium flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-            Đang kết nối đến Firebase...
+    <!-- Khu vực nội dung chính -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        <!-- Vùng hiển thị thông báo/lỗi -->
+        <div id="alert-container"></div>
+
+        <!-- Vùng hiển thị động các View (Đăng nhập / Danh sách công việc / Thống kê) -->
+        <div id="app-content">
+            <div class="flex items-center justify-center py-20 text-slate-400">
+                <i class="fa-solid font-circle-notch animate-spin text-3xl mr-3"></i>
+                <span>Đang tải hệ thống...</span>
+            </div>
         </div>
+    </main>
 
-        <form id="register-form" class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Họ và Tên</label>
-                <input type="text" id="user-fullname" required placeholder="Phạm Ngọc Thắng" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
+    <!-- Modal Form (Dùng cho Thêm / Sửa công việc) -->
+    <div id="modal-container"></div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Email</label>
-                <input type="email" id="user-email" required placeholder="thangpn@ufm.edu.vn" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mật Khẩu</label>
-                <input type="password" id="user-password" required placeholder="••••••••" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Phòng Ban</label>
-                <select id="user-dept" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="HC-TV">Hành chính - Tài vụ</option>
-                    <option value="DT-QLSV">Đào tạo - KH & QLSV</option>
-                    <option value="BGD">Ban Giám Đốc</option>
-                </select>
-            </div>
-
-            <button type="submit" id="btn-submit" disabled class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-semibold rounded-lg text-sm shadow transition">
-                Gửi Dữ Liệu Lên Firebase
-            </button>
-        </form>
-
-        <div id="result-msg" class="mt-4 hidden p-3 rounded-xl text-xs font-medium"></div>
-    </div>
-
-    <!-- Tải Firebase SDK trực tiếp dạng Module -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBYjORDaQLmPwfAFhqRTwAi-ufVec8qd_0",
-            authDomain: "quanlycongviec-651b6.firebaseapp.com",
-            databaseURL: "https://quanlycongviec-651b6-default-rtdb.firebaseio.com",
-            projectId: "quanlycongviec-651b6",
-            storageBucket: "quanlycongviec-651b6.firebasestorage.app",
-            messagingSenderId: "775368483539",
-            appId: "1:775368483539:web:c9464d5f59c3104fe2aa26"
-        };
-
-        const statusEl = document.getElementById('connection-status');
-        const submitBtn = document.getElementById('btn-submit');
-        const resultEl = document.getElementById('result-msg');
-
-        let db = null;
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getDatabase(app);
-
-            statusEl.className = "mb-4 p-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-medium flex items-center gap-2";
-            statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đã kết nối thành công đến Firebase!`;
-            submitBtn.disabled = false;
-        } catch (error) {
-            statusEl.className = "mb-4 p-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium flex items-center gap-2";
-            statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> Lỗi kết nối: ${error.message}`;
-        }
-
-        // Bắt sự kiện Submit form
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            resultEl.classList.add('hidden');
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Đang ghi dữ liệu...";
-
-            const fullName = document.getElementById('user-fullname').value.trim();
-            const email = document.getElementById('user-email').value.trim();
-            const password = document.getElementById('user-password').value;
-            const deptId = document.getElementById('user-dept').value;
-
-            try {
-                // Tạo một node con mới trong bảng "test_users"
-                const usersRef = ref(db, 'test_users');
-                const newUserRef = push(usersRef);
-
-                await set(newUserRef, {
-                    fullName: fullName,
-                    email: email,
-                    password: password,
-                    deptId: deptId,
-                    createdAt: new Date().toISOString()
-                });
-
-                resultEl.className = "mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium";
-                resultEl.innerHTML = `✅ <b>Thành công!</b> Dữ liệu tài khoản <b>${fullName}</b> đã được lưu lên Firebase Database.`;
-                resultEl.classList.remove('hidden');
-
-                // Reset form
-                document.getElementById('register-form').reset();
-            } catch (err) {
-                resultEl.className = "mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium";
-                resultEl.innerHTML = `❌ <b>Lỗi ghi dữ liệu:</b> ${err.message}<br><small>Vui lòng kiểm tra lại Rules trên Firebase Console (xem có đang đặt read: true, write: true chưa).</small>`;
-                resultEl.classList.remove('hidden');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Gửi Dữ Liệu Lên Firebase";
-            }
-        });
-    </script>
+    <!-- Entrypoint chính của JavaScript -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
