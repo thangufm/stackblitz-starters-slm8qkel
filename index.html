@@ -21,30 +21,41 @@
     </footer>
 
     <!-- Thư viện Firebase SDK (Module) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+   <!-- Thư viện Firebase SDK (Module) -->
+   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBYjORDaQLmPwfAFhqRTwAi-ufVec8qd_0",
-            authDomain: "quanlycongviec-651b6.firebaseapp.com",
-            databaseURL: "https://quanlycongviec-651b6-default-rtdb.firebaseio.com",
-            projectId: "quanlycongviec-651b6",
-            storageBucket: "quanlycongviec-651b6.firebasestorage.app",
-            messagingSenderId: "775368483539",
-            appId: "1:775368483539:web:c9464d5f59c3104fe2aa26"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyBYjORDaQLmPwfAFhqRTwAi-ufVec8qd_0",
+        authDomain: "quanlycongviec-651b6.firebaseapp.com",
+        databaseURL: "https://quanlycongviec-651b6-default-rtdb.firebaseio.com",
+        projectId: "quanlycongviec-651b6",
+        storageBucket: "quanlycongviec-651b6.firebasestorage.app",
+        messagingSenderId: "775368483539",
+        appId: "1:775368483539:web:c9464d5f59c3104fe2aa26"
+    };
 
+    try {
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Đưa biến & hàm Firebase ra window để app.js sử dụng
         window.db = db;
         window.dbRef = { ref, get, set, update, onValue };
 
-        // Phát sự kiện thông báo Firebase đã sẵn sàng
-        window.dispatchEvent(new Event('firebase-ready'));
-    </script>
+        // Gọi hàm khởi chạy app ngay sau khi gán window.db
+        if (typeof window.initUFMApp === 'function') {
+            window.initUFMApp();
+        }
+    } catch (e) {
+        console.error("Lỗi khởi tạo Firebase:", e);
+    }
+</script>
+
+<!-- Tải tệp xử lý chính -->
+<script src="app.js"></script>
+</body>
+</html>
 
     <!-- Tải tệp xử lý chính -->
     <script src="app.js"></script>

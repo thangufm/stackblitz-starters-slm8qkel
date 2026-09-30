@@ -1203,3 +1203,18 @@ if (window.db) {
 } else {
     window.addEventListener('firebase-ready', startApp);
 }
+// Hàm khởi tạo ứng dụng an toàn
+window.initUFMApp = function() {
+    if (!window.appInstance) {
+        window.appInstance = new App();
+    }
+};
+
+// Kiểm tra nếu DOM đã tải xong
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.db) window.initUFMApp();
+    });
+} else {
+    if (window.db) window.initUFMApp();
+}
