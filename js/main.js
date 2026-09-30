@@ -13,14 +13,20 @@ class App {
         this.tasks = [];
     }
 
-    init() {
-        // Kiểm tra phiên đăng nhập hiện tại từ LocalStorage
+    async init() {
+        // 1. Tự động kiểm tra & tạo phòng ban mẫu nếu Firebase chưa có
+        try {
+            await DeptService.initDefaultDepartments();
+        } catch (err) {
+            console.error("Chưa khởi tạo được phòng ban:", err);
+        }
+    
+        // 2. Kiểm tra phiên đăng nhập hiện tại từ LocalStorage
         this.currentUser = AuthService.getCurrentUser();
-
-        // Render Navbar ban đầu
+    
+        // 3. Render Navbar & Chuyển giao diện
         this.renderNavbar();
-
-        // Kiểm tra điều hướng
+    
         if (this.currentUser) {
             this.loadDashboard();
         } else {

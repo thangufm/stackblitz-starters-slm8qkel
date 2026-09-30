@@ -1,39 +1,37 @@
 //Logic Danh mục Phòng ban & Nhân sự
-import { db, ref, get } from '../config/firebase-config.js';
-
-// Danh mục phòng ban mặc định của Phân hiệu UFM
-const DEFAULT_DEPTS = [
-    { id: 'HC-TV', name: 'Phòng Hành chính - Tài vụ' },
-    { id: 'DT-QLSV', name: 'Phòng Đào tạo - KH & QLSV' },
-    { id: 'BGD', name: 'Ban Giám Đốc Phân hiệu' }
-];
+import { db, ref, get, set } from '../config/firebase-config.js';
 
 export const DeptService = {
-    // Lấy danh sách phòng ban
-    getDepartments() {
-        return DEFAULT_DEPTS;
-    },
+    // Danh sách phòng ban cố định của Phân hiệu
+    departments: [
+        { id: "dept_bgd", name: "Ban Giám đốc" },
+        { id: "dept_hctv", name: "Phòng Hành chính - Tài vụ" },
+        { id: "dept_dtkhqlsv", name: "Phòng Đào tạo - Khoa học và QLSV" }
+    ],
 
-    // Lấy tên phòng ban theo ID
-    getDeptName(deptId) {
-        const dept = DEFAULT_DEPTS.find(d => d.id === deptId);
-        return dept ? dept.name : deptId;
-    },
-
-    // Lấy tất cả người dùng thuộc một phòng ban
-    async getUsersByDept(deptId) {
-        const usersRef = ref(db, 'users');
-        const snapshot = await get(usersRef);
-        const users = [];
-
-        if (snapshot.exists()) {
-            snapshot.forEach((child) => {
-                const u = child.val();
-                if (!deptId || u.deptId === deptId) {
-                    users.push({ id: child.key, ...u });
-                }
-            });
+    // Khởi tạo danh sách phòng ban lên Firebase Realtime Database nếu chưa có
+    async initDefaultDepartments() {
+        try {
+            const snapshot = await get(ref(db, 'departments'));
+            if (!snapshot.exists()) {
+                const defaultDepts = {
+                    "dept_bgd": { id: "dept_bgd", name: "Ban Giám đốc" },
+                    "dept_hctv": { id: "dept_hctv", name: "Phòng Hành chính - Tài vụ" },
+                    "dept_dtkhqlsv": { id: "dept_dtkhqlsv", name: "Phòng Đào tạo - Khoa học và QLSV" }
+                };
+                await set(ref(db, 'departments'), defaultDepts);
+            }
+        } catch (error) {
+            console.error("Lỗi khởi tạo phòng ban:", error);
         }
-        return users;
+    },
+
+    getDepartments() {
+        return this.departments;
+    },
+
+    getDeptName(deptId) {
+        const dept = this.departments.find(d => d.id === deptId);
+        return dept ? dept.name : 'Chưa xác định';
     }
 };
