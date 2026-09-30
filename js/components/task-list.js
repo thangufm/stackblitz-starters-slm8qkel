@@ -1,7 +1,7 @@
 //Hiển thị bảng danh sách & Lọc công việc
 import { DeptService } from '../services/dept-service.js';
 import { TaskService } from '../services/task-service.js';
-import { formatDate, getStatusBadge, getPriorityBadge } from '../utils/formatters.js';
+import { formatDate, getStatusBadge, getPriorityBadge } from '/js/utils/formatters.js';
 
 export const TaskListComponent = {
     render(container, tasks, currentUser, onEditTask) {
