@@ -1,6 +1,273 @@
-import { AuthService } from './authService.js';
-import { TaskService } from './taskService.js';
+// ==========================================
+// 1. AUTH SERVICE (Quản lý đăng nhập/Tài khoản)
+// ==========================================
+class AuthService {
+    constructor() {
+        this.STORAGE_USERS_KEY = 'ufm_users';
+        this.STORAGE_CURRENT_KEY = 'ufm_current_user';
+        this.initUsers();
+    }
 
+    initUsers() {
+        if (!localStorage.getItem(this.STORAGE_USERS_KEY)) {
+            const defaultUsers = [
+                {
+                    email: 'bgd@ufm.edu.vn',
+                    password: '123',
+                    fullName: 'Ban Giám Đốc',
+                    position: 'Giám đốc Phân hiệu',
+                    role: 'ADMIN_BGD',
+                    deptId: 'BGD'
+                },
+                {
+                    email: 'yenlinhbt@ufm.edu.vn',
+                    password: '123',
+                    fullName: 'Bùi Thị Yến Linh',
+                    position: 'Trưởng phòng',
+                    role: 'MANAGER',
+                    deptId: 'HC-TV'
+                },
+                {
+                    email: 'ngocthang@ufm.edu.vn',
+                    password: '123',
+                    fullName: 'Phạm Ngọc Thắng',
+                    position: 'Nhân viên',
+                    role: 'STAFF',
+                    deptId: 'HC-TV'
+                },
+                {
+                    email: 'daotao@ufm.edu.vn',
+                    password: '123',
+                    fullName: 'Nguyễn Văn A',
+                    position: 'Trưởng phòng',
+                    role: 'MANAGER',
+                    deptId: 'DT-QLSV'
+                },
+                {
+                    email: 'nvdaotao@ufm.edu.vn',
+                    password: '123',
+                    fullName: 'Trần Thị B',
+                    position: 'Nhân viên',
+                    role: 'STAFF',
+                    deptId: 'DT-QLSV'
+                }
+            ];
+            localStorage.setItem(this.STORAGE_USERS_KEY, JSON.stringify(defaultUsers));
+        }
+    }
+
+    getUsers() {
+        return JSON.parse(localStorage.getItem(this.STORAGE_USERS_KEY)) || [];
+    }
+
+    getUsersByDept(deptId) {
+        const users = this.getUsers();
+        if (deptId === 'ALL') return users;
+        return users.filter(u => u.deptId === deptId);
+    }
+
+    getCurrentUser() {
+        const userStr = localStorage.getItem(this.STORAGE_CURRENT_KEY);
+        if (!userStr) return null;
+        try {
+            return JSON.parse(userStr);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    login(email, password) {
+        const users = this.getUsers();
+        const foundUser = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === password);
+
+        if (foundUser) {
+            localStorage.setItem(this.STORAGE_CURRENT_KEY, JSON.stringify(foundUser));
+            return { success: true, user: foundUser };
+        } else {
+            return { success: false, message: 'Email hoặc mật khẩu không chính xác!' };
+        }
+    }
+
+    logout() {
+        localStorage.removeItem(this.STORAGE_CURRENT_KEY);
+    }
+
+    changePassword(email, oldPassword, newPassword) {
+        const users = this.getUsers();
+        const userIndex = users.findIndex(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
+
+        if (userIndex === -1) {
+            return { success: false, message: 'Tài khoản không tồn tại!' };
+        }
+
+        if (users[userIndex].password !== oldPassword) {
+            return { success: false, message: 'Mật khẩu hiện tại không đúng!' };
+        }
+
+        users[userIndex].password = newPassword;
+        localStorage.setItem(this.STORAGE_USERS_KEY, JSON.stringify(users));
+
+        const currentUser = this.getCurrentUser();
+        if (currentUser && currentUser.email === email) {
+            currentUser.password = newPassword;
+            localStorage.setItem(this.STORAGE_CURRENT_KEY, JSON.stringify(currentUser));
+        }
+
+        return { success: true, message: 'Đổi mật khẩu thành công!' };
+    }
+}
+
+// ==========================================
+// 2. TASK SERVICE (Quản lý dữ liệu Công việc)
+// ==========================================
+class TaskService {
+    constructor() {
+        this.STORAGE_TASKS_KEY = 'ufm_tasks';
+        this.initTasks();
+    }
+
+    initTasks() {
+        if (!localStorage.getItem(this.STORAGE_TASKS_KEY)) {
+            const defaultTasks = [
+                {
+                    id: 1,
+                    title: 'Lập kế hoạch công tác tuần mới',
+                    expectedProduct: 'Bản kế hoạch PDF',
+                    deadline: '2026-10-05',
+                    dept: 'HC-TV',
+                    deptName: 'Hành chính - Tài vụ',
+                    assignee: 'Bùi Thị Yến Linh (Trưởng phòng)',
+                    coWorkers: ['Phạm Ngọc Thắng'],
+                    status: 'DOING',
+                    proofUrl: '',
+                    proofNote: '',
+                    directive: ''
+                },
+                {
+                    id: 2,
+                    title: 'Báo cáo tình hình quản lý thiết bị CNTT',
+                    expectedProduct: 'Tờ trình & Bảng thống kê',
+                    deadline: '2026-10-10',
+                    dept: 'HC-TV',
+                    deptName: 'Hành chính - Tài vụ',
+                    assignee: 'Phạm Ngọc Thắng (Nhân viên)',
+                    coWorkers: [],
+                    status: 'WAITING_ASSIGN',
+                    proofUrl: '',
+                    proofNote: '',
+                    directive: ''
+                }
+            ];
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(defaultTasks));
+        }
+    }
+
+    getTasks(dept = 'ALL', startDate = '', endDate = '', currentUserName = '', selectedStaff = 'ALL') {
+        let tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+
+        if (dept === 'MY_TASKS') {
+            tasks = tasks.filter(t => 
+                (t.assignee && t.assignee.includes(currentUserName)) || 
+                (t.coWorkers && t.coWorkers.some(cw => cw.includes(currentUserName)))
+            );
+        } else if (dept !== 'ALL') {
+            tasks = tasks.filter(t => t.dept === dept);
+        }
+
+        if (selectedStaff && selectedStaff !== 'ALL') {
+            tasks = tasks.filter(t => 
+                (t.assignee && t.assignee.includes(selectedStaff)) || 
+                (t.coWorkers && t.coWorkers.some(cw => cw.includes(selectedStaff)))
+            );
+        }
+
+        if (startDate) {
+            tasks = tasks.filter(t => t.deadline >= startDate);
+        }
+        if (endDate) {
+            tasks = tasks.filter(t => t.deadline <= endDate);
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        tasks.forEach(t => {
+            if (t.status !== 'DONE' && t.deadline < today) {
+                t.status = 'LATE';
+            }
+        });
+
+        return tasks;
+    }
+
+    getUnassignedCountByDept(deptCode) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        if (deptCode === 'ALL') {
+            return tasks.filter(t => t.status === 'WAITING_ASSIGN').length;
+        }
+        return tasks.filter(t => t.dept === deptCode && t.status === 'WAITING_ASSIGN').length;
+    }
+
+    addMultipleTasks(tasksArray, isStaff = false) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        let maxId = tasks.reduce((max, t) => t.id > max ? t.id : max, 0);
+
+        tasksArray.forEach(t => {
+            maxId++;
+            tasks.push({
+                id: maxId,
+                title: t.title,
+                expectedProduct: t.expectedProduct || '',
+                deadline: t.deadline,
+                dept: t.dept,
+                deptName: t.deptName,
+                assignee: t.assignee || 'Chưa phân công',
+                coWorkers: [],
+                status: isStaff ? 'WAITING_ASSIGN' : 'DOING',
+                proofUrl: '',
+                proofNote: '',
+                directive: ''
+            });
+        });
+
+        localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+    }
+
+    assignTask(taskId, mainUser, coWorkers) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.assignee = mainUser;
+            task.coWorkers = coWorkers;
+            if (task.status === 'WAITING_ASSIGN') {
+                task.status = 'DOING';
+            }
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+        }
+    }
+
+    updateTaskStatusAndProof(taskId, status, proofUrl, proofNote) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.status = status;
+            task.proofUrl = proofUrl;
+            task.proofNote = proofNote;
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+        }
+    }
+
+    addDirective(taskId, directive) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.directive = directive;
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+        }
+    }
+}
+
+// ==========================================
+// 3. MAIN APP CONTROLLER (Giao diện chính)
+// ==========================================
 class App {
     constructor() {
         this.authService = new AuthService();
@@ -18,7 +285,7 @@ class App {
         const parts = dateStr.split('-');
         if (parts.length === 3) {
             const yearShort = parts[0].substring(2);
-            return `${parts[2]}/${parts[1]}/${yearShort}`; // dd/mm/yy
+            return `${parts[2]}/${parts[1]}/${yearShort}`;
         }
         return dateStr;
     }
@@ -53,7 +320,7 @@ class App {
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Mật khẩu</label>
                             <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <p class="text-[11px] text-slate-400 mt-1.5"><i class="fa-solid fa-info-circle"></i> Mật khẩu khởi đầu mặc định: <b class="text-indigo-600">123</b></p>
+                            <p class="text-[11px] text-slate-400 mt-1.5"><i class="fa-solid fa-info-circle"></i> Mật khẩu mặc định: <b class="text-indigo-600">123</b></p>
                         </div>
                         <div id="login-error" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-medium"></div>
                         <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md shadow-indigo-200 transition">Đăng Nhập</button>
@@ -102,7 +369,6 @@ class App {
         }
 
         appContainer.innerHTML = `
-            <!-- HEADER -->
             <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-30">
                 <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                     <div class="flex items-center gap-3">
@@ -126,9 +392,7 @@ class App {
                 </div>
             </header>
 
-            <!-- CONTENT -->
             <main class="max-w-7xl mx-auto px-4 py-8">
-                <!-- KHU VỰC BỘ LỌC CÔNG VIỆC -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 mb-6">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
                         <div>
@@ -138,7 +402,6 @@ class App {
                             <p class="text-xs text-slate-500 mt-1">Theo dõi, giao việc và cập nhật tiến độ minh chứng</p>
                         </div>
 
-                        <!-- BỘ LỌC & NÚT XUẤT EXCEL -->
                         <div class="flex flex-wrap items-center gap-2">
                             <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
                                 <span class="text-xs font-semibold text-slate-600 pl-1"><i class="fa-solid fa-calendar-days text-indigo-600 mr-1"></i> Lọc thời hạn:</span>
@@ -151,14 +414,12 @@ class App {
 
                             ${staffFilterHtml}
 
-                            <!-- NÚT XUẤT EXCEL -->
                             <button id="btn-export-excel" class="px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5" title="Xuất báo cáo ra Excel">
                                 <i class="fa-solid fa-file-excel text-sm"></i> Xuất Excel
                             </button>
                         </div>
                     </div>
 
-                    <!-- TAB DÂN CƯ VÀ NÚT ĐĂNG KÝ CÔNG VIỆC -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
                         <div class="flex items-center gap-2.5 overflow-x-auto pb-1">
                             ${!isBGD ? `
@@ -190,7 +451,6 @@ class App {
                         ` : ''}
                     </div>
 
-                    <!-- THỐNG KÊ CARDS -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
                             <div><div class="text-[11px] font-semibold text-slate-400 uppercase">TỔNG CÔNG VIỆC</div><div id="stat-total" class="text-xl font-bold text-slate-800">0</div></div>
@@ -211,7 +471,6 @@ class App {
                     </div>
                 </div>
 
-                <!-- BẢNG DANH SÁCH CÔNG VIỆC -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                     <div class="p-4 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -238,7 +497,7 @@ class App {
                 </div>
             </main>
 
-            <!-- MODAL BÁO CÁO TIẾN ĐỘ & UPLOAD MINH CHỨNG -->
+            <!-- MODAL BÁO CÁO TIẾN ĐỘ -->
             <div id="modal-update-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
@@ -275,7 +534,7 @@ class App {
                 </div>
             </div>
 
-            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC MULTI-ROW -->
+            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC -->
             <div id="modal-add-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh]">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
@@ -320,7 +579,7 @@ class App {
                 </div>
             </div>
 
-            <!-- MODAL GIAO NHIỆM VỤ CẤP PHÒNG -->
+            <!-- MODAL PHÂN CÔNG -->
             <div id="modal-assign-task" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                     <div class="flex justify-between items-center mb-4">
@@ -891,6 +1150,7 @@ class App {
     }
 }
 
+// Khởi chạy ứng dụng khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new App();
 });
