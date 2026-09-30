@@ -681,7 +681,7 @@ class App {
             this.renderTaskTable(user);
         });
 
-        // XUẤT EXCEL TÁCH ĐÚNG 3 CỘT SỬ DỤNG DẤU CHẤM PHẨY (;)
+        // XUẤT EXCEL DẠNG HTML SPREADSHEET CHUẨN TIẾNG VIỆT 100% VÀ CHIA ĐÚNG 3 CỘT
         document.getElementById('btn-export-excel').addEventListener('click', () => {
             this.exportTasksToExcel3Columns(user);
         });
@@ -863,7 +863,7 @@ class App {
         });
     }
 
-    // XUẤT EXCEL CHUẨN ĐÚNG 3 CỘT BẰNG DẤU CHẤM PHẨY (;) VÀ KÍ TỰ TỰ ĐỘNG PHÂN CỘT "sep=;"
+    // PHƯƠNG PHÁP XUẤT EXCEL HTML SPREADSHEET (KHÔNG LỖI FONT TIẾNG VIỆT & TỰ CHIA ĐÚNG 3 CỘT)
     exportTasksToExcel3Columns(user) {
         const tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
         if (tasks.length === 0) {
@@ -871,36 +871,76 @@ class App {
             return;
         }
 
-        // Bổ sung directive sep=; ở đầu giúp Excel tự động chia làm 3 cột A, B, C ngay khi mở
-        let csvContent = "\uFEFFsep=;\r\n";
-        csvContent += "Từ ngày đến ngày;Họ và Tên;Công việc\r\n";
-
         const timeRangeLabel = (this.startDate && this.endDate) 
             ? `${this.formatDateShort(this.startDate)} đến ${this.formatDateShort(this.endDate)}` 
             : 'Tất cả thời gian';
 
+        let tableRows = '';
         tasks.forEach(t => {
-            const timeCol = `"${timeRangeLabel}"`;
-            
             let rawAssignee = t.assignee || '';
             const idxOpenParen = rawAssignee.indexOf('(');
             if (idxOpenParen !== -1) {
                 rawAssignee = rawAssignee.substring(0, idxOpenParen).trim();
             }
-            const nameCol = `"${rawAssignee.replace(/"/g, '""')}"`;
-            const taskCol = `"${(t.title || '').replace(/"/g, '""')}"`;
 
-            // Dùng dấu ; để phân chia cột chuẩn xác trong Excel
-            csvContent += `${timeCol};${nameCol};${taskCol}\r\n`;
+            tableRows += `
+                <tr>
+                    <td style="mso-number-format:'\\@';">${timeRangeLabel}</td>
+                    <td style="mso-number-format:'\\@';">${rawAssignee}</td>
+                    <td style="mso-number-format:'\\@';">${t.title || ''}</td>
+                </tr>
+            `;
         });
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Tạo cấu trúc HTML XML dạng Excel Spreadsheet hỗ trợ UTF-8 tuyệt đối
+        const excelTemplate = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+                <!--[if gte mso 9]>
+                <xml>
+                    <x:ExcelWorkbook>
+                        <x:ExcelWorksheets>
+                            <x:ExcelWorksheet>
+                                <x:Name>Báo cáo công việc</x:Name>
+                                <x:WorksheetOptions>
+                                    <x:DisplayGridlines/>
+                                </x:WorksheetOptions>
+                            </x:ExcelWorksheet>
+                        </x:ExcelWorksheets>
+                    </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+                <style>
+                    td, th { font-family: Arial; font-size: 11pt; padding: 5px; }
+                    th { font-weight: bold; background-color: #f2f2f2; border: 0.5pt solid #ccc; }
+                    td { border: 0.5pt solid #ccc; }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Từ ngày đến ngày</th>
+                            <th>Họ và Tên</th>
+                            <th>Công việc</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         
         const staffLabel = this.selectedStaff !== 'ALL' ? `_${this.selectedStaff.replace(/\s+/g, '_')}` : '_Tat_ca';
         link.setAttribute("href", url);
-        link.setAttribute("download", `Bao_cao_cong_viec${staffLabel}.csv`);
+        link.setAttribute("download", `Bao_cao_cong_viec${staffLabel}.xls`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
