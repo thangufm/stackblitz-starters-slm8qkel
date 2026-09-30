@@ -1,32 +1,27 @@
-//Điều phối hệ thống (Entry point)
-import { AuthService } from '/js/services/auth-service.js';
-import { TaskService } from '/js/services/task-service.js';
-import { NavbarComponent } from '/js/components/navbar.js';
-import { AuthViewComponent } from '/js/components/auth-view.js';
-import { TaskListComponent } from '/js/components/task-list.js';
-import { TaskFormComponent } from '/js/components/task-form.js';
+import { AuthService } from './services/auth-service.js';
+import { DeptService } from './services/dept-service.js'; // <-- Thêm dòng này
+import { TaskService } from './services/task-service.js';
+import { NavbarComponent } from './components/navbar.js';
+import { AuthViewComponent } from './components/auth-view.js';
+import { TaskListComponent } from './components/task-list.js';
+import { TaskFormComponent } from './components/task-form.js';
 
 class App {
-    constructor() {
-        this.currentUser = null;
-        this.unsubscribeTasks = null;
-        this.tasks = [];
-    }
-
     async init() {
-        // 1. Tự động kiểm tra & tạo phòng ban mẫu nếu Firebase chưa có
+        // Tự động khởi tạo danh sách 3 phòng ban nếu Firebase chưa có
         try {
             await DeptService.initDefaultDepartments();
         } catch (err) {
             console.error("Chưa khởi tạo được phòng ban:", err);
         }
-    
-        // 2. Kiểm tra phiên đăng nhập hiện tại từ LocalStorage
+
+        // Kiểm tra phiên đăng nhập hiện tại từ LocalStorage
         this.currentUser = AuthService.getCurrentUser();
-    
-        // 3. Render Navbar & Chuyển giao diện
+
+        // Render Navbar
         this.renderNavbar();
-    
+
+        // Chuyển hướng giao diện
         if (this.currentUser) {
             this.loadDashboard();
         } else {
@@ -43,7 +38,6 @@ class App {
     }
 
     loadAuthView() {
-        // Hủy đăng ký lắng nghe Firebase Realtime nếu có
         if (this.unsubscribeTasks) {
             this.unsubscribeTasks();
             this.unsubscribeTasks = null;
@@ -63,17 +57,14 @@ class App {
         const appContainer = document.getElementById('app-container');
         if (!appContainer) return;
 
-        // Đặt layout cho trang Dashboard
         appContainer.innerHTML = `
             <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-                <!-- Chứa danh sách công việc -->
                 <div id="task-list-container"></div>
             </div>
         `;
 
         const taskListContainer = document.getElementById('task-list-container');
 
-        // Lắng nghe dữ liệu công việc thời gian thực từ Firebase Realtime DB
         this.unsubscribeTasks = TaskService.subscribeTasks((taskList) => {
             this.tasks = taskList;
             TaskListComponent.render(
@@ -86,9 +77,7 @@ class App {
     }
 
     openTaskModal(taskData = null) {
-        TaskFormComponent.render(this.currentUser, taskData, () => {
-            // Khi lưu thành công, Firebase onValue sẽ tự động cập nhật giao diện
-        });
+        TaskFormComponent.render(this.currentUser, taskData, () => {});
     }
 
     handleLogout() {
@@ -104,7 +93,6 @@ class App {
     }
 }
 
-// Khởi tạo ứng dụng khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();
