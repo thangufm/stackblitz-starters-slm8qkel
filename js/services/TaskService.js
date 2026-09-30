@@ -1,62 +1,148 @@
-import { Task } from '../models/Task.js';
-
 export class TaskService {
     constructor() {
-        this.tasks = [];
-        this.initDefaultTasks();
+        this.STORAGE_TASKS_KEY = 'ufm_tasks';
+        this.initTasks();
     }
 
-    initDefaultTasks() {
-        const savedTasks = localStorage.getItem('app_tasks');
-        if (savedTasks) {
-            const rawData = JSON.parse(savedTasks);
-            this.tasks = rawData.map(t => Object.assign(new Task(), t));
-        } else {
-            this.tasks = [
-                new Task(1, 'Lập kế hoạch tuyển dụng Q3', 'DEPT_TCNS', 'Phòng Tổ chức - Nhân sự', 'nv_tcns@ufm.edu.vn', '2026-10-15', 'DOING', 'Ưu tiên triển khai sớm', 'Báo cáo kế hoạch'),
-                new Task(2, 'Cập nhật hạ tầng CNTT', 'DEPT_IT', 'Phòng CNTT', '', '2026-10-20', 'WAITING_ASSIGN', '', 'Đề xuất trang thiết bị')
+    initTasks() {
+        if (!localStorage.getItem(this.STORAGE_TASKS_KEY)) {
+            const defaultTasks = [
+                {
+                    id: 1,
+                    title: 'Lập kế hoạch công tác tuần mới',
+                    expectedProduct: 'Bản kế hoạch PDF',
+                    deadline: '2026-10-05',
+                    dept: 'HC-TV',
+                    deptName: 'Hành chính - Tài vụ',
+                    assignee: 'Bùi Thị Yến Linh (Trưởng phòng)',
+                    coWorkers: ['Phạm Ngọc Thắng'],
+                    status: 'DOING',
+                    proofUrl: '',
+                    proofNote: '',
+                    directive: ''
+                },
+                {
+                    id: 2,
+                    title: 'Báo cáo tình hình quản lý thiết bị CNTT',
+                    expectedProduct: 'Tờ trình & Bảng thống kê',
+                    deadline: '2026-10-10',
+                    dept: 'HC-TV',
+                    deptName: 'Hành chính - Tài vụ',
+                    assignee: 'Phạm Ngọc Thắng (Nhân viên)',
+                    coWorkers: [],
+                    status: 'WAITING_ASSIGN',
+                    proofUrl: '',
+                    proofNote: '',
+                    directive: ''
+                }
             ];
-            this.saveTasks();
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(defaultTasks));
         }
     }
 
-    saveTasks() {
-        localStorage.setItem('app_tasks', JSON.stringify(this.tasks));
+    getTasks(dept = 'ALL', startDate = '', endDate = '', currentUserName = '', selectedStaff = 'ALL') {
+        let tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+
+        // Lọc theo phòng ban
+        if (dept === 'MY_TASKS') {
+            tasks = tasks.filter(t => 
+                (t.assignee && t.assignee.includes(currentUserName)) || 
+                (t.coWorkers && t.coWorkers.some(cw => cw.includes(currentUserName)))
+            );
+        } else if (dept !== 'ALL') {
+            tasks = tasks.filter(t => t.dept === dept);
+        }
+
+        // Lọc theo nhân viên được chọn
+        if (selectedStaff && selectedStaff !== 'ALL') {
+            tasks = tasks.filter(t => 
+                (t.assignee && t.assignee.includes(selectedStaff)) || 
+                (t.coWorkers && t.coWorkers.some(cw => cw.includes(selectedStaff)))
+            );
+        }
+
+        // Lọc theo ngày
+        if (startDate) {
+            tasks = tasks.filter(t => t.deadline >= startDate);
+        }
+        if (endDate) {
+            tasks = tasks.filter(t => t.deadline <= endDate);
+        }
+
+        // Cập nhật tự động trạng thái trễ hạn (LATE)
+        const today = new Date().toISOString().split('T')[0];
+        tasks.forEach(t => {
+            if (t.status !== 'DONE' && t.deadline < today) {
+                t.status = 'LATE';
+            }
+        });
+
+        return tasks;
     }
 
-    getAllTasks() {
-        return this.tasks;
+    getUnassignedCountByDept(deptCode) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        if (deptCode === 'ALL') {
+            return tasks.filter(t => t.status === 'WAITING_ASSIGN').length;
+        }
+        return tasks.filter(t => t.dept === deptCode && t.status === 'WAITING_ASSIGN').length;
     }
 
-    getTaskById(id) {
-        return this.tasks.find(t => t.id === Number(id));
+    addMultipleTasks(tasksArray, isStaff = false) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        let maxId = tasks.reduce((max, t) => t.id > max ? t.id : max, 0);
+
+        tasksArray.forEach(t => {
+            maxId++;
+            tasks.push({
+                id: maxId,
+                title: t.title,
+                expectedProduct: t.expectedProduct || '',
+                deadline: t.deadline,
+                dept: t.dept,
+                deptName: t.deptName,
+                assignee: t.assignee || 'Chưa phân công',
+                coWorkers: [],
+                status: isStaff ? 'WAITING_ASSIGN' : 'DOING',
+                proofUrl: '',
+                proofNote: '',
+                directive: ''
+            });
+        });
+
+        localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
     }
 
-    addTask(taskData) {
-        const newId = this.tasks.length > 0 ? Math.max(...this.tasks.map(t => t.id)) + 1 : 1;
-        const newTask = new Task(
-            newId,
-            taskData.title,
-            taskData.dept,
-            taskData.deptName,
-            taskData.assignee || '',
-            taskData.deadline,
-            taskData.status || 'WAITING_ASSIGN',
-            taskData.directive || '',
-            taskData.expectedProduct || ''
-        );
-        this.tasks.push(newTask);
-        this.saveTasks();
-        return newTask;
-    }
-
-    updateTask(id, updatedData) {
-        const task = this.getTaskById(id);
+    assignTask(taskId, mainUser, coWorkers) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        const task = tasks.find(t => t.id === taskId);
         if (task) {
-            Object.assign(task, updatedData);
-            this.saveTasks();
-            return task;
+            task.assignee = mainUser;
+            task.coWorkers = coWorkers;
+            if (task.status === 'WAITING_ASSIGN') {
+                task.status = 'DOING';
+            }
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
         }
-        return null;
+    }
+
+    updateTaskStatusAndProof(taskId, status, proofUrl, proofNote) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.status = status;
+            task.proofUrl = proofUrl;
+            task.proofNote = proofNote;
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+        }
+    }
+
+    addDirective(taskId, directive) {
+        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.directive = directive;
+            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+        }
     }
 }
