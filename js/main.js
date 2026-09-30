@@ -1,10 +1,10 @@
 //Điều phối hệ thống (Entry point)
-import { AuthService } from './services/auth-service.js';
-import { TaskService } from './services/task-service.js';
-import { NavbarComponent } from './components/navbar.js';
-import { AuthViewComponent } from './components/auth-view.js';
-import { TaskListComponent } from './components/task-list.js';
-import { TaskFormComponent } from './components/task-form.js';
+import { AuthService } from '/js/services/auth-service.js';
+import { TaskService } from '/js/services/task-service.js';
+import { NavbarComponent } from '/js/components/navbar.js';
+import { AuthViewComponent } from '/js/components/auth-view.js';
+import { TaskListComponent } from '/js/components/task-list.js';
+import { TaskFormComponent } from '/js/components/task-form.js';
 
 class App {
     constructor() {

@@ -1,5 +1,5 @@
 //Logic CRUD & Lắng nghe thời gian thực Công việc
-import { db, ref, push, set, get, update, remove, onValue } from '../config/firebase-config.js';
+import { db, ref, push, set, get, update, remove, onValue } from 'js/config/firebase-config.js';
 
 export const TaskService = {
     // 1. Tạo công việc mới

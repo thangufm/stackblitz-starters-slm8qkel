@@ -1,5 +1,5 @@
 //Logic Đăng ký, Đăng nhập, Phân quyền
-import { db, ref, set, push, get, query, orderByChild, equalTo } from '../config/firebase-config.js';
+import { db, ref, set, push, get, query, orderByChild, equalTo } from 'js/config/firebase-config.js';
 
 const CURRENT_USER_KEY = 'ufm_task_user';
 

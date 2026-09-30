@@ -1,6 +1,6 @@
 //Form / Modal Thêm - Sửa công việc
-import { TaskService } from '../services/task-service.js';
-import { DeptService } from '../services/dept-service.js';
+import { TaskService } from '/js/services/task-service.js';
+import { DeptService } from '/js/services/dept-service.js';
 
 export const TaskFormComponent = {
     // Hiển thị Modal (Nếu taskData null -> Thêm mới, có taskData -> Cập nhật)

@@ -1,5 +1,5 @@
-import { AuthService } from '../services/auth-service.js';
-import { DeptService } from '../services/dept-service.js';
+import { AuthService } from '/js/services/auth-service.js';
+import { DeptService } from '/js/services/dept-service.js';
 
 export const AuthViewComponent = {
     render(container, onAuthSuccess) {
