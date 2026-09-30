@@ -3,33 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Công Việc - Phân Hiệu UFM</title>
+    <title>Phân hệ Quản lý Công việc - UFM Quảng Ngãi</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
-
-    <!-- Thanh Navigation -->
+<body class="bg-slate-100 min-h-screen text-slate-800">
+    <!-- Navbar Container -->
     <div id="navbar-container"></div>
 
-    <!-- Khu vực nội dung chính -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        <!-- Vùng hiển thị thông báo/lỗi -->
-        <div id="alert-container"></div>
-
-        <!-- Vùng hiển thị động các View (Đăng nhập / Danh sách công việc / Thống kê) -->
-        <div id="app-content">
-            <div class="flex items-center justify-center py-20 text-slate-400">
-                <i class="fa-solid font-circle-notch animate-spin text-3xl mr-3"></i>
-                <span>Đang tải hệ thống...</span>
-            </div>
+    <!-- Main Content Container -->
+    <main id="app-container" class="p-4 sm:p-6">
+        <!-- Loader nhẹ tạm thời -->
+        <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-indigo-600"></i>
+            <p class="text-xs font-medium">Đang kết nối hệ thống...</p>
         </div>
     </main>
 
-    <!-- Modal Form (Dùng cho Thêm / Sửa công việc) -->
-    <div id="modal-container"></div>
-
-    <!-- Entrypoint chính của JavaScript -->
     <script type="module" src="/js/main.js"></script>
 </body>
 </html>
