@@ -353,7 +353,7 @@ class App {
                             <p class="text-xs text-slate-500 mt-1">Theo dõi, giao việc và cập nhật tiến độ minh chứng</p>
                         </div>
 
-                        <!-- BỘ LỌC TỪ NGÀY ... ĐẾN NGÀY ... & LỌC NHÂN VIÊN & NÚT XUẤT EXCEL 3 CỘT -->
+                        <!-- BỘ LỌC & NÚT XUẤT EXCEL -->
                         <div class="flex flex-wrap items-center gap-2">
                             <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
                                 <span class="text-xs font-semibold text-slate-600 pl-1"><i class="fa-solid fa-calendar-days text-indigo-600 mr-1"></i> Lọc thời hạn:</span>
@@ -366,9 +366,9 @@ class App {
 
                             ${staffFilterHtml}
 
-                            <!-- NÚT XUẤT EXCEL 3 CỘT -->
-                            <button id="btn-export-excel" class="px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5" title="Xuất báo cáo 3 cột ra Excel">
-                                <i class="fa-solid fa-file-excel text-sm"></i> Xuất Excel (3 Cột)
+                            <!-- NÚT XUẤT EXCEL -->
+                            <button id="btn-export-excel" class="px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5" title="Xuất báo cáo ra Excel">
+                                <i class="fa-solid fa-file-excel text-sm"></i> Xuất Excel
                             </button>
                         </div>
                     </div>
@@ -602,8 +602,6 @@ class App {
     }
 
     updateStaffFilterDropdown(user) {
-        const isBGD = user.role === 'ADMIN_BGD' || user.position.includes('Giám đốc') || user.position.includes('Phó Giám đốc');
-        const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
         const staffFilterContainer = document.getElementById('staff-filter-container');
         const staffSelect = document.getElementById('filter-staff-select');
 
@@ -614,7 +612,7 @@ class App {
             staffFilterContainer.classList.add('flex');
 
             const usersInDept = this.authService.getUsersByDept(this.currentDept);
-            staffSelect.innerHTML = `<option value="ALL">-- Tất cả nhân viên (${usersInDept.length}) --</option>`;
+            staffSelect.innerHTML = `<option value="ALL">-- Tất cả nhân viên --</option>`;
             usersInDept.forEach(u => {
                 const opt = document.createElement('option');
                 opt.value = u.fullName;
@@ -683,7 +681,7 @@ class App {
             this.renderTaskTable(user);
         });
 
-        // XUẤT EXCEL CHUẨN XÁC 3 CỘT
+        // XUẤT EXCEL TÁCH ĐÚNG 3 CỘT SỬ DỤNG DẤU CHẤM PHẨY (;)
         document.getElementById('btn-export-excel').addEventListener('click', () => {
             this.exportTasksToExcel3Columns(user);
         });
@@ -865,6 +863,7 @@ class App {
         });
     }
 
+    // XUẤT EXCEL CHUẨN ĐÚNG 3 CỘT BẰNG DẤU CHẤM PHẨY (;) VÀ KÍ TỰ TỰ ĐỘNG PHÂN CỘT "sep=;"
     exportTasksToExcel3Columns(user) {
         const tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
         if (tasks.length === 0) {
@@ -872,8 +871,9 @@ class App {
             return;
         }
 
-        let csvContent = "\uFEFF"; 
-        csvContent += "Từ ngày đến ngày,Họ và Tên,Công việc\r\n";
+        // Bổ sung directive sep=; ở đầu giúp Excel tự động chia làm 3 cột A, B, C ngay khi mở
+        let csvContent = "\uFEFFsep=;\r\n";
+        csvContent += "Từ ngày đến ngày;Họ và Tên;Công việc\r\n";
 
         const timeRangeLabel = (this.startDate && this.endDate) 
             ? `${this.formatDateShort(this.startDate)} đến ${this.formatDateShort(this.endDate)}` 
@@ -890,15 +890,17 @@ class App {
             const nameCol = `"${rawAssignee.replace(/"/g, '""')}"`;
             const taskCol = `"${(t.title || '').replace(/"/g, '""')}"`;
 
-            csvContent += `${timeCol},${nameCol},${taskCol}\r\n`;
+            // Dùng dấu ; để phân chia cột chuẩn xác trong Excel
+            csvContent += `${timeCol};${nameCol};${taskCol}\r\n`;
         });
 
-        const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
+        const url = URL.createObjectURL(blob);
         
         const staffLabel = this.selectedStaff !== 'ALL' ? `_${this.selectedStaff.replace(/\s+/g, '_')}` : '_Tat_ca';
-        link.setAttribute("download", `Bao_cao_3_cot${staffLabel}.csv`);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Bao_cao_cong_viec${staffLabel}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
