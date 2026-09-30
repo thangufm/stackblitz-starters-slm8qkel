@@ -14,18 +14,14 @@ class App {
     }
 
     async init() {
-        // 1. Thử khởi tạo danh sách phòng ban ngầm (không chặn luồng giao diện)
-        DeptService.initDefaultDepartments().catch(err => {
-            console.warn("Không thể đồng bộ phòng ban với Firebase:", err);
+        // Tự động đẩy danh sách phòng ban và nhân sự lên Firebase nếu chưa có
+        DeptService.initDefaultData().catch(err => {
+            console.warn("Không thể đồng bộ dữ liệu ban đầu:", err);
         });
 
-        // 2. Lấy phiên đăng nhập hiện tại từ LocalStorage
         this.currentUser = AuthService.getCurrentUser();
-
-        // 3. Render Navbar ngay lập tức
         this.renderNavbar();
 
-        // 4. Chuyển hướng màn hình chính
         if (this.currentUser) {
             this.loadDashboard();
         } else {
@@ -85,6 +81,7 @@ class App {
     }
 
     handleLogout() {
+        AuthService.logout();
         this.currentUser = null;
         this.renderNavbar();
         this.loadAuthView();
