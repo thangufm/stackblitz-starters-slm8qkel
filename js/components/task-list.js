@@ -1,4 +1,5 @@
 import { DeptService } from '../services/dept-service.js';
+import { TaskDetailModalComponent } from './task-detail-modal.js';
 
 export const TaskListComponent = {
     render(container, tasks = [], currentUser = null, onSelectTask = null) {
@@ -100,7 +101,12 @@ export const TaskListComponent = {
                 row.addEventListener('click', () => {
                     const taskId = row.getAttribute('data-task-id');
                     const task = tasks.find(t => t.id === taskId);
-                    if (task && onSelectTask) onSelectTask(task);
+                    
+                    // Gọi Popup hiển thị chi tiết công việc
+                    if (task) {
+                        TaskDetailModalComponent.render(task, currentUser);
+                        if (onSelectTask) onSelectTask(task);
+                    }
                 });
             });
         };
