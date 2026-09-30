@@ -1,6 +1,6 @@
 //Hiển thị bảng danh sách & Lọc công việc
-import { DeptService } from '/services/dept-service.js';
-import { TaskService } from '/services/task-service.js';
+import { DeptService } from 'js/services/dept-service.js';
+import { TaskService } from 'js/services/task-service.js';
 import { formatDate, getStatusBadge, getPriorityBadge } from '/js/utils/formatters.js';
 
 export const TaskListComponent = {
