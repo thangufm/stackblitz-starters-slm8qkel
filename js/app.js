@@ -1,67 +1,73 @@
 // ==========================================
-// 1. AUTH SERVICE (Quản lý đăng nhập/Tài khoản)
+// 1. AUTH SERVICE (Quản lý đăng nhập / Tài khoản)
 // ==========================================
 class AuthService {
     constructor() {
-        this.STORAGE_USERS_KEY = 'ufm_users';
         this.STORAGE_CURRENT_KEY = 'ufm_current_user';
-        this.initUsers();
+        this.defaultUsers = [
+            {
+                email: 'bgd@ufm.edu.vn',
+                password: '123',
+                fullName: 'Ban Giám Đốc',
+                position: 'Giám đốc Phân hiệu',
+                role: 'ADMIN_BGD',
+                deptId: 'BGD'
+            },
+            {
+                email: 'yenlinhbt@ufm.edu.vn',
+                password: '123',
+                fullName: 'Bùi Thị Yến Linh',
+                position: 'Trưởng phòng',
+                role: 'MANAGER',
+                deptId: 'HC-TV'
+            },
+            {
+                email: 'ngocthang@ufm.edu.vn',
+                password: '123',
+                fullName: 'Phạm Ngọc Thắng',
+                position: 'Nhân viên',
+                role: 'STAFF',
+                deptId: 'HC-TV'
+            },
+            {
+                email: 'daotao@ufm.edu.vn',
+                password: '123',
+                fullName: 'Nguyễn Văn A',
+                position: 'Trưởng phòng',
+                role: 'MANAGER',
+                deptId: 'DT-QLSV'
+            },
+            {
+                email: 'nvdaotao@ufm.edu.vn',
+                password: '123',
+                fullName: 'Trần Thị B',
+                position: 'Nhân viên',
+                role: 'STAFF',
+                deptId: 'DT-QLSV'
+            }
+        ];
+        this.initUsersFirebase();
     }
 
-    initUsers() {
-        if (!localStorage.getItem(this.STORAGE_USERS_KEY)) {
-            const defaultUsers = [
-                {
-                    email: 'bgd@ufm.edu.vn',
-                    password: '123',
-                    fullName: 'Ban Giám Đốc',
-                    position: 'Giám đốc Phân hiệu',
-                    role: 'ADMIN_BGD',
-                    deptId: 'BGD'
-                },
-                {
-                    email: 'yenlinhbt@ufm.edu.vn',
-                    password: '123',
-                    fullName: 'Bùi Thị Yến Linh',
-                    position: 'Trưởng phòng',
-                    role: 'MANAGER',
-                    deptId: 'HC-TV'
-                },
-                {
-                    email: 'ngocthang@ufm.edu.vn',
-                    password: '123',
-                    fullName: 'Phạm Ngọc Thắng',
-                    position: 'Nhân viên',
-                    role: 'STAFF',
-                    deptId: 'HC-TV'
-                },
-                {
-                    email: 'daotao@ufm.edu.vn',
-                    password: '123',
-                    fullName: 'Nguyễn Văn A',
-                    position: 'Trưởng phòng',
-                    role: 'MANAGER',
-                    deptId: 'DT-QLSV'
-                },
-                {
-                    email: 'nvdaotao@ufm.edu.vn',
-                    password: '123',
-                    fullName: 'Trần Thị B',
-                    position: 'Nhân viên',
-                    role: 'STAFF',
-                    deptId: 'DT-QLSV'
-                }
-            ];
-            localStorage.setItem(this.STORAGE_USERS_KEY, JSON.stringify(defaultUsers));
+    async initUsersFirebase() {
+        if (!window.db || !window.dbRef) return;
+        const { ref, get, set } = window.dbRef;
+        const usersRef = ref(window.db, 'users');
+        const snapshot = await get(usersRef);
+        if (!snapshot.exists()) {
+            await set(usersRef, this.defaultUsers);
         }
     }
 
-    getUsers() {
-        return JSON.parse(localStorage.getItem(this.STORAGE_USERS_KEY)) || [];
+    async getUsers() {
+        if (!window.db || !window.dbRef) return this.defaultUsers;
+        const { ref, get } = window.dbRef;
+        const snapshot = await get(ref(window.db, 'users'));
+        return snapshot.exists() ? snapshot.val() : this.defaultUsers;
     }
 
-    getUsersByDept(deptId) {
-        const users = this.getUsers();
+    async getUsersByDept(deptId) {
+        const users = await this.getUsers();
         if (deptId === 'ALL') return users;
         return users.filter(u => u.deptId === deptId);
     }
@@ -76,8 +82,8 @@ class AuthService {
         }
     }
 
-    login(email, password) {
-        const users = this.getUsers();
+    async login(email, password) {
+        const users = await this.getUsers();
         const foundUser = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === password);
 
         if (foundUser) {
@@ -92,8 +98,8 @@ class AuthService {
         localStorage.removeItem(this.STORAGE_CURRENT_KEY);
     }
 
-    changePassword(email, oldPassword, newPassword) {
-        const users = this.getUsers();
+    async changePassword(email, oldPassword, newPassword) {
+        const users = await this.getUsers();
         const userIndex = users.findIndex(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
 
         if (userIndex === -1) {
@@ -105,7 +111,11 @@ class AuthService {
         }
 
         users[userIndex].password = newPassword;
-        localStorage.setItem(this.STORAGE_USERS_KEY, JSON.stringify(users));
+
+        if (window.db && window.dbRef) {
+            const { ref, set } = window.dbRef;
+            await set(ref(window.db, 'users'), users);
+        }
 
         const currentUser = this.getCurrentUser();
         if (currentUser && currentUser.email === email) {
@@ -118,16 +128,21 @@ class AuthService {
 }
 
 // ==========================================
-// 2. TASK SERVICE (Quản lý dữ liệu Công việc)
+// 2. TASK SERVICE (Quản lý dữ liệu trên Firebase)
 // ==========================================
 class TaskService {
     constructor() {
-        this.STORAGE_TASKS_KEY = 'ufm_tasks';
-        this.initTasks();
+        this.tasks = [];
+        this.initTasksFirebase();
     }
 
-    initTasks() {
-        if (!localStorage.getItem(this.STORAGE_TASKS_KEY)) {
+    async initTasksFirebase() {
+        if (!window.db || !window.dbRef) return;
+        const { ref, get, set } = window.dbRef;
+        const tasksRef = ref(window.db, 'tasks');
+        const snapshot = await get(tasksRef);
+
+        if (!snapshot.exists()) {
             const defaultTasks = [
                 {
                     id: 1,
@@ -158,12 +173,24 @@ class TaskService {
                     directive: ''
                 }
             ];
-            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(defaultTasks));
+            await set(tasksRef, defaultTasks);
         }
     }
 
-    getTasks(dept = 'ALL', startDate = '', endDate = '', currentUserName = '', selectedStaff = 'ALL') {
-        let tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
+    subscribeTasks(callback) {
+        if (!window.db || !window.dbRef) return;
+        const { ref, onValue } = window.dbRef;
+        const tasksRef = ref(window.db, 'tasks');
+
+        onValue(tasksRef, (snapshot) => {
+            const data = snapshot.val();
+            this.tasks = Array.isArray(data) ? data : (data ? Object.values(data) : []);
+            callback(this.tasks);
+        });
+    }
+
+    getFilteredTasks(dept = 'ALL', startDate = '', endDate = '', currentUserName = '', selectedStaff = 'ALL') {
+        let tasks = [...this.tasks];
 
         if (dept === 'MY_TASKS') {
             tasks = tasks.filter(t => 
@@ -199,20 +226,19 @@ class TaskService {
     }
 
     getUnassignedCountByDept(deptCode) {
-        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
         if (deptCode === 'ALL') {
-            return tasks.filter(t => t.status === 'WAITING_ASSIGN').length;
+            return this.tasks.filter(t => t.status === 'WAITING_ASSIGN').length;
         }
-        return tasks.filter(t => t.dept === deptCode && t.status === 'WAITING_ASSIGN').length;
+        return this.tasks.filter(t => t.dept === deptCode && t.status === 'WAITING_ASSIGN').length;
     }
 
-    addMultipleTasks(tasksArray, isStaff = false) {
-        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
-        let maxId = tasks.reduce((max, t) => t.id > max ? t.id : max, 0);
+    async addMultipleTasks(tasksArray, isStaff = false) {
+        let maxId = this.tasks.reduce((max, t) => t.id > max ? t.id : max, 0);
 
+        const newTasks = [...this.tasks];
         tasksArray.forEach(t => {
             maxId++;
-            tasks.push({
+            newTasks.push({
                 id: maxId,
                 title: t.title,
                 expectedProduct: t.expectedProduct || '',
@@ -228,39 +254,54 @@ class TaskService {
             });
         });
 
-        localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+        if (window.db && window.dbRef) {
+            const { ref, set } = window.dbRef;
+            await set(ref(window.db, 'tasks'), newTasks);
+        }
     }
 
-    assignTask(taskId, mainUser, coWorkers) {
-        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-            task.assignee = mainUser;
-            task.coWorkers = coWorkers;
-            if (task.status === 'WAITING_ASSIGN') {
-                task.status = 'DOING';
+    async assignTask(taskId, mainUser, coWorkers) {
+        const taskIndex = this.tasks.findIndex(t => t.id === taskId);
+        if (taskIndex !== -1) {
+            const updatedTasks = [...this.tasks];
+            updatedTasks[taskIndex].assignee = mainUser;
+            updatedTasks[taskIndex].coWorkers = coWorkers;
+            if (updatedTasks[taskIndex].status === 'WAITING_ASSIGN') {
+                updatedTasks[taskIndex].status = 'DOING';
             }
-            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+
+            if (window.db && window.dbRef) {
+                const { ref, set } = window.dbRef;
+                await set(ref(window.db, 'tasks'), updatedTasks);
+            }
         }
     }
 
-    updateTaskStatusAndProof(taskId, status, proofUrl, proofNote) {
-        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-            task.status = status;
-            task.proofUrl = proofUrl;
-            task.proofNote = proofNote;
-            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+    async updateTaskStatusAndProof(taskId, status, proofUrl, proofNote) {
+        const taskIndex = this.tasks.findIndex(t => t.id === taskId);
+        if (taskIndex !== -1) {
+            const updatedTasks = [...this.tasks];
+            updatedTasks[taskIndex].status = status;
+            updatedTasks[taskIndex].proofUrl = proofUrl;
+            updatedTasks[taskIndex].proofNote = proofNote;
+
+            if (window.db && window.dbRef) {
+                const { ref, set } = window.dbRef;
+                await set(ref(window.db, 'tasks'), updatedTasks);
+            }
         }
     }
 
-    addDirective(taskId, directive) {
-        const tasks = JSON.parse(localStorage.getItem(this.STORAGE_TASKS_KEY)) || [];
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-            task.directive = directive;
-            localStorage.setItem(this.STORAGE_TASKS_KEY, JSON.stringify(tasks));
+    async addDirective(taskId, directive) {
+        const taskIndex = this.tasks.findIndex(t => t.id === taskId);
+        if (taskIndex !== -1) {
+            const updatedTasks = [...this.tasks];
+            updatedTasks[taskIndex].directive = directive;
+
+            if (window.db && window.dbRef) {
+                const { ref, set } = window.dbRef;
+                await set(ref(window.db, 'tasks'), updatedTasks);
+            }
         }
     }
 }
@@ -329,9 +370,9 @@ class App {
             </div>
         `;
 
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const res = this.authService.login(
+            const res = await this.authService.login(
                 document.getElementById('login-email').value,
                 document.getElementById('login-password').value
             );
@@ -392,7 +433,7 @@ class App {
                 </div>
             </header>
 
-            <main class="max-w-7xl mx-auto px-4 py-8">
+            <main class="max-w-7xl mx-auto px-4 py-8 flex-1">
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 mb-6">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
                         <div>
@@ -642,10 +683,14 @@ class App {
 
         this.bindEvents(user);
         this.updateStaffFilterDropdown(user);
-        this.renderTaskTable(user);
+
+        // Đăng ký lắng nghe biến động dữ liệu thời gian thực từ Firebase Realtime Database
+        this.taskService.subscribeTasks(() => {
+            this.renderTaskTable(user);
+        });
     }
 
-    updateStaffFilterDropdown(user) {
+    async updateStaffFilterDropdown(user) {
         const staffFilterContainer = document.getElementById('staff-filter-container');
         const staffSelect = document.getElementById('filter-staff-select');
 
@@ -655,7 +700,7 @@ class App {
             staffFilterContainer.classList.remove('hidden');
             staffFilterContainer.classList.add('flex');
 
-            const usersInDept = this.authService.getUsersByDept(this.currentDept);
+            const usersInDept = await this.authService.getUsersByDept(this.currentDept);
             staffSelect.innerHTML = `<option value="ALL">-- Tất cả nhân viên --</option>`;
             usersInDept.forEach(u => {
                 const opt = document.createElement('option');
@@ -739,7 +784,7 @@ class App {
         document.getElementById('close-modal-pass').addEventListener('click', () => modalPass.classList.add('hidden'));
         document.getElementById('btn-cancel-pass').addEventListener('click', () => modalPass.classList.add('hidden'));
 
-        document.getElementById('form-change-pass').addEventListener('submit', (e) => {
+        document.getElementById('form-change-pass').addEventListener('submit', async (e) => {
             e.preventDefault();
             const oldP = document.getElementById('pass-old').value;
             const newP = document.getElementById('pass-new').value;
@@ -753,7 +798,7 @@ class App {
                 return;
             }
 
-            const res = this.authService.changePassword(user.email, oldP, newP);
+            const res = await this.authService.changePassword(user.email, oldP, newP);
             if (res.success) {
                 msgDiv.className = "p-2.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600";
                 msgDiv.innerText = res.message;
@@ -837,7 +882,7 @@ class App {
 
         const formAddGrid = document.getElementById('form-add-task-grid');
         if (formAddGrid) {
-            formAddGrid.addEventListener('submit', (e) => {
+            formAddGrid.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const rows = Array.from(gridTbody.querySelectorAll('.grid-row'));
                 const tasksToAdd = [];
@@ -865,9 +910,8 @@ class App {
                 });
 
                 if (tasksToAdd.length > 0) {
-                    this.taskService.addMultipleTasks(tasksToAdd, isStaff);
+                    await this.taskService.addMultipleTasks(tasksToAdd, isStaff);
                     modalAdd.classList.add('hidden');
-                    this.renderTaskTable(user);
                 }
             });
         }
@@ -876,7 +920,7 @@ class App {
         document.getElementById('close-modal-assign').addEventListener('click', () => modalAssign.classList.add('hidden'));
         document.getElementById('btn-cancel-assign').addEventListener('click', () => modalAssign.classList.add('hidden'));
 
-        document.getElementById('form-assign-task').addEventListener('submit', (e) => {
+        document.getElementById('form-assign-task').addEventListener('submit', async (e) => {
             e.preventDefault();
             const taskId = parseInt(document.getElementById('assign-task-id').value);
             const mainUser = document.getElementById('assign-main-user').value;
@@ -884,30 +928,28 @@ class App {
             const selectCo = document.getElementById('assign-coworkers');
             const coWorkers = Array.from(selectCo.selectedOptions).map(opt => opt.value);
 
-            this.taskService.assignTask(taskId, mainUser, coWorkers);
+            await this.taskService.assignTask(taskId, mainUser, coWorkers);
             modalAssign.classList.add('hidden');
-            this.renderTaskTable(user);
         });
 
         const modalUpdate = document.getElementById('modal-update-task');
         document.getElementById('close-modal-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
         document.getElementById('btn-cancel-update').addEventListener('click', () => modalUpdate.classList.add('hidden'));
 
-        document.getElementById('form-update-task').addEventListener('submit', (e) => {
+        document.getElementById('form-update-task').addEventListener('submit', async (e) => {
             e.preventDefault();
             const taskId = parseInt(document.getElementById('update-task-id').value);
             const status = document.getElementById('update-task-status').value;
             const proofUrl = document.getElementById('update-task-url').value.trim();
             const proofNote = document.getElementById('update-task-note').value.trim();
 
-            this.taskService.updateTaskStatusAndProof(taskId, status, proofUrl, proofNote);
+            await this.taskService.updateTaskStatusAndProof(taskId, status, proofUrl, proofNote);
             modalUpdate.classList.add('hidden');
-            this.renderTaskTable(user);
         });
     }
 
     exportTasksToExcel3Columns(user) {
-        const tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
+        const tasks = this.taskService.getFilteredTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
         if (tasks.length === 0) {
             alert('Không có dữ liệu công việc phù hợp với bộ lọc hiện tại để xuất Excel!');
             return;
@@ -997,7 +1039,7 @@ class App {
         const isBGD = user.role === 'ADMIN_BGD' || user.position.includes('Giám đốc') || user.position.includes('Phó Giám đốc');
         const isManager = user.role === 'MANAGER' || user.role === 'SUPER_ADMIN';
 
-        let tasks = this.taskService.getTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
+        let tasks = this.taskService.getFilteredTasks(this.currentDept, this.startDate, this.endDate, user.fullName, this.selectedStaff);
 
         document.getElementById('stat-total').innerText = tasks.length;
         document.getElementById('stat-doing').innerText = tasks.filter(t => t.status === 'DOING').length;
@@ -1092,22 +1134,21 @@ class App {
             `;
 
             if (isBGD && tr.querySelector('.btn-directive')) {
-                tr.querySelector('.btn-directive').addEventListener('click', () => {
+                tr.querySelector('.btn-directive').addEventListener('click', async () => {
                     const directive = prompt(`Nhập ý kiến chỉ đạo của BGĐ cho:\n"${task.title}"`);
                     if (directive) {
-                        this.taskService.addDirective(task.id, directive);
-                        this.renderTaskTable(user);
+                        await this.taskService.addDirective(task.id, directive);
                     }
                 });
             }
 
             if (canManageThisTask && tr.querySelector('.btn-assign')) {
-                tr.querySelector('.btn-assign').addEventListener('click', () => {
+                tr.querySelector('.btn-assign').addEventListener('click', async () => {
                     const modalAssign = document.getElementById('modal-assign-task');
                     document.getElementById('assign-task-id').value = task.id;
                     document.getElementById('assign-task-title-display').innerText = task.title;
 
-                    const deptUsers = this.authService.getUsersByDept(task.dept);
+                    const deptUsers = await this.authService.getUsersByDept(task.dept);
                     const selectMain = document.getElementById('assign-main-user');
                     const selectCo = document.getElementById('assign-coworkers');
 
@@ -1150,7 +1191,15 @@ class App {
     }
 }
 
-// Khởi chạy ứng dụng khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new App();
-});
+// Khởi chạy ứng dụng khi DOM & Firebase đã sẵn sàng
+function startApp() {
+    if (!window.app) {
+        window.app = new App();
+    }
+}
+
+if (window.db) {
+    startApp();
+} else {
+    window.addEventListener('firebase-ready', startApp);
+}

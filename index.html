@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Công Việc - Ban Giám Đốc</title>
+    <title>Hệ Thống Quản Lý Công Việc - Phân hiệu UFM tại Quảng Ngãi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -13,144 +13,40 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- TOP NAVBAR -->
-    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-            <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2 rounded-lg text-white">
-                    <i class="fa-solid fa-layer-group text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">QUẢN LÝ CÔNG VIỆC 12g3</h1>
-                    <p class="text-xs text-indigo-200">Phân hiệu UFM tại Quảng Ngãi</p>
-                </div>
-            </div>
-
-            <div class="flex items-center space-x-4">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-semibold text-white">Phạm Ngọc Thắng</p>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-400 text-amber-950">
-                        <i class="fa-solid fa-crown mr-1"></i> Super Admin / BGĐ
-                    </span>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-indigo-700 border-2 border-indigo-400 flex items-center justify-center font-bold text-white shadow">
-                    PNT
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- MAIN CONTAINER -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
-
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-line text-indigo-600"></i>
-                        Bảng Điều Khiển Tổng Quan Công Việc
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-0.5">Theo dõi tiến độ đăng ký và thực hiện công việc tuần của các Phòng/Ban</p>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
-                        <span class="px-3 text-xs font-semibold text-slate-700">Tuần 39 (28/09 - 04/10/2026)</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB LỌC PHÒNG BAN -->
-            <div class="mt-5 border-t border-slate-100 pt-4 flex flex-wrap gap-2">
-                <button data-dept="ALL" class="dept-btn px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm transition">
-                    <i class="fa-solid fa-building mr-1"></i> Tất Cả Phòng Ban
-                </button>
-                <button data-dept="HC-TV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-                    Hành Chính - Tài Vụ
-                </button>
-                <button data-dept="DT-QLSV" class="dept-btn px-4 py-2 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-                    Đào Tạo - Khoa Học & QLSV
-                </button>
-            </div>
-        </div>
-
-        <!-- STATS KPI CARDS -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase">Tổng Công Việc Tuần</p>
-                    <p class="text-2xl font-bold text-slate-800 mt-1" id="stat-total">0</p>
-                </div>
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-list-check"></i>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase">Đang Thực Hiện</p>
-                    <p class="text-2xl font-bold text-amber-600 mt-1" id="stat-doing">0</p>
-                </div>
-                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-spinner fa-spin-pulse"></i>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase">Đã Hoàn Thành</p>
-                    <p class="text-2xl font-bold text-emerald-600 mt-1" id="stat-done">0</p>
-                </div>
-                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase">Cảnh Báo Trễ Hạn</p>
-                    <p class="text-2xl font-bold text-rose-600 mt-1" id="stat-late">0</p>
-                </div>
-                <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- DANH SÁCH CÔNG VIỆC -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-tasks text-indigo-600"></i>
-                    Danh Sách Công Việc Đăng Ký Trong Tuần
-                </h3>
-                <span class="text-xs text-slate-500" id="task-count-label">Hiển thị 0 công việc</span>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs sm:text-sm">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 uppercase text-[11px]">
-                            <th class="py-3 px-4">Tên Công Việc</th>
-                            <th class="py-3 px-4">Phòng Ban</th>
-                            <th class="py-3 px-4">Người Phụ Trách</th>
-                            <th class="py-3 px-4">Thời Hạn</th>
-                            <th class="py-3 px-4">Trạng Thái</th>
-                            <th class="py-3 px-4 text-center">Thao Tác BGĐ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="task-table-body" class="divide-y divide-slate-100 font-normal text-slate-700">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
+    <!-- KHU VỰC HIỂN THỊ CHÍNH DÀNH CHO APP.JS -->
+    <div id="app-root" class="min-h-screen flex flex-col"></div>
 
     <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500">
         © 2026 Phân hiệu Trường Đại học Tài chính - Marketing tại tỉnh Quảng Ngãi.
     </footer>
 
-    <!-- TẢI MODULE JS TỪ THƯ MỤC JS -->
-    <script type="module" src="js/app.js"></script>
+    <!-- Thư viện Firebase SDK (Module) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYjORDaQLmPwfAFhqRTwAi-ufVec8qd_0",
+            authDomain: "quanlycongviec-651b6.firebaseapp.com",
+            databaseURL: "https://quanlycongviec-651b6-default-rtdb.firebaseio.com",
+            projectId: "quanlycongviec-651b6",
+            storageBucket: "quanlycongviec-651b6.firebasestorage.app",
+            messagingSenderId: "775368483539",
+            appId: "1:775368483539:web:c9464d5f59c3104fe2aa26"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Đưa biến & hàm Firebase ra window để app.js sử dụng
+        window.db = db;
+        window.dbRef = { ref, get, set, update, onValue };
+
+        // Phát sự kiện thông báo Firebase đã sẵn sàng
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
+    <!-- Tải tệp xử lý chính -->
+    <script src="app.js"></script>
 </body>
 </html>
