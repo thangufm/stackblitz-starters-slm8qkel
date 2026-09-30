@@ -1,61 +1,50 @@
 export class AdminDashboardView {
-    constructor() {
-        this.tbody = document.getElementById('task-table-body');
-        this.statTotal = document.getElementById('stat-total');
-        this.statDoing = document.getElementById('stat-doing');
-        this.statDone = document.getElementById('stat-done');
-        this.statLate = document.getElementById('stat-late');
-        this.taskCountLabel = document.getElementById('task-count-label');
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
     }
 
-    render(tasks, onDirectiveClick) {
-        this.tbody.innerHTML = '';
+    render(tasks = []) {
+        if (!this.container) return;
 
-        // Cập nhật các thẻ KPI
-        this.statTotal.innerText = tasks.length;
-        this.statDoing.innerText = tasks.filter(t => t.status === 'DOING').length;
-        this.statDone.innerText = tasks.filter(t => t.status === 'DONE').length;
-        this.statLate.innerText = tasks.filter(t => t.status === 'LATE').length;
-        this.taskCountLabel.innerText = `Hiển thị ${tasks.length} công việc`;
+        const rowsHtml = tasks.map(task => `
+            <tr>
+                <td>${task.id}</td>
+                <td><strong>${task.title}</strong></td>
+                <td>${task.deptName || task.dept}</td>
+                <td>${task.assignee || '<em>Chưa phân công</em>'}</td>
+                <td>${task.deadline}</td>
+                <td><span class="badge ${this.getStatusBadgeClass(task.status)}">${task.status}</span></td>
+            </tr>
+        `).join('');
 
-        if (tasks.length === 0) {
-            this.tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Không có công việc nào.</td></tr>`;
-            return;
+        this.container.innerHTML = `
+            <div class="admin-dashboard">
+                <h2>Bảng Điều Khiển Quản Trị</h2>
+                <table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên công việc</th>
+                            <th>Đơn vị</th>
+                            <th>Người thực hiện</th>
+                            <th>Hạn chót</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml.length > 0 ? rowsHtml : '<tr><td colspan="6" class="text-center">Chưa có công việc nào</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    getStatusBadgeClass(status) {
+        switch (status) {
+            case 'DOING': return 'bg-primary';
+            case 'DONE': return 'bg-success';
+            case 'LATE': return 'bg-danger';
+            default: return 'bg-warning text-dark';
         }
-
-        tasks.forEach(task => {
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50/80 transition";
-
-            let statusBadge = '';
-            if (task.status === 'LATE') {
-                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700"><i class="fa-solid fa-circle text-[8px]"></i> Trễ Hạn</span>`;
-            } else if (task.status === 'DOING') {
-                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><i class="fa-solid fa-circle text-[8px]"></i> Đang Làm</span>`;
-            } else {
-                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle text-[8px]"></i> Hoàn Thành</span>`;
-            }
-
-            const deptBadgeClass = task.dept === 'HC-TV' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-purple-50 text-purple-700 border-purple-200';
-
-            tr.innerHTML = `
-                <td class="py-3.5 px-4 font-medium text-slate-900">
-                    ${task.title}
-                    ${task.directive ? `<div class="text-xs text-indigo-700 font-normal mt-1 bg-indigo-50 p-1.5 rounded border border-indigo-100"><i class="fa-solid fa-bullhorn mr-1"></i> <b>BGĐ Chỉ đạo:</b> ${task.directive}</div>` : ''}
-                </td>
-                <td class="py-3.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${deptBadgeClass} border">${task.deptName}</span></td>
-                <td class="py-3.5 px-4">${task.assignee}</td>
-                <td class="py-3.5 px-4 ${task.status === 'LATE' ? 'text-rose-600 font-medium' : ''}">${task.deadline}</td>
-                <td class="py-3.5 px-4">${statusBadge}</td>
-                <td class="py-3.5 px-4 text-center">
-                    <button class="btn-directive text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition">
-                        <i class="fa-solid fa-comment-dots mr-1"></i> Cho chỉ đạo
-                    </button>
-                </td>
-            `;
-
-            tr.querySelector('.btn-directive').addEventListener('click', () => onDirectiveClick(task));
-            this.tbody.appendChild(tr);
-        });
     }
 }
