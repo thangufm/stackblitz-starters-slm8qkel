@@ -2,20 +2,26 @@ import { ChangePassModalComponent } from './change-pass-modal.js';
 
 export const NavbarComponent = {
     render(container, currentUser, onLogout) {
-        // 1. CHUYỂN ĐỔI: Nếu truyền vào tham số là String (ID), tự động lấy thẻ DOM tương ứng
+        // 1. Xác định thẻ DOM chứa Navbar (xử lý an toàn cho mọi kiểu truyền vào)
+        let targetElement = null;
+
         if (typeof container === 'string') {
-            const cleanId = container.replace('#', '');
-            container = document.getElementById(cleanId);
+            targetElement = document.getElementById(container.replace('#', '')) || document.querySelector(container);
+        } else if (container && container.nodeType === 1) {
+            targetElement = container;
+        } else {
+            // Trường hợp container truyền vào là null/undefined hoặc object khác, tìm mặc định theo id #navbar
+            targetElement = document.getElementById('navbar') || document.querySelector('header');
         }
 
-        // 2. KIỂM TRA AN TOÀN: Nếu vẫn không tìm thấy thẻ DOM thì dừng an toàn
-        if (!container) {
-            console.warn("NavbarComponent: Không tìm thấy thẻ chứa Navbar!");
+        // Nếu vẫn không tìm thấy thẻ DOM nào trên trang thì dừng an toàn
+        if (!targetElement) {
+            console.warn("NavbarComponent: Không tìm thấy thẻ chứa Navbar trong index.html");
             return;
         }
 
-        // 3. RENDER GIAO DIỆN NAVBAR
-        container.innerHTML = `
+        // 2. Gán HTML giao diện
+        targetElement.innerHTML = `
             <nav class="bg-indigo-900 text-white shadow-md">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-between h-16">
@@ -54,17 +60,19 @@ export const NavbarComponent = {
             </nav>
         `;
 
-        // 4. LẮNG NGHE SỰ KIỆN
-        const btnChangePass = container.querySelector('#btn-change-pass');
-        if (btnChangePass) {
-            btnChangePass.addEventListener('click', () => {
-                ChangePassModalComponent.render(currentUser);
-            });
-        }
+        // 3. Lắng nghe sự kiện (Sử dụng document.getElementById để đảm bảo không phụ thuộc vào container)
+        setTimeout(() => {
+            const btnChangePass = document.getElementById('btn-change-pass');
+            if (btnChangePass) {
+                btnChangePass.onclick = () => {
+                    ChangePassModalComponent.render(currentUser);
+                };
+            }
 
-        const btnLogout = container.querySelector('#btn-logout');
-        if (btnLogout && onLogout) {
-            btnLogout.addEventListener('click', onLogout);
-        }
+            const btnLogout = document.getElementById('btn-logout');
+            if (btnLogout && onLogout) {
+                btnLogout.onclick = onLogout;
+            }
+        }, 0);
     }
 };
