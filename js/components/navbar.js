@@ -2,12 +2,19 @@ import { ChangePassModalComponent } from './change-pass-modal.js';
 
 export const NavbarComponent = {
     render(container, currentUser, onLogout) {
-        // Kiểm tra nếu container null thì dừng, tránh crash ứng dụng
+        // 1. CHUYỂN ĐỔI: Nếu truyền vào tham số là String (ID), tự động lấy thẻ DOM tương ứng
+        if (typeof container === 'string') {
+            const cleanId = container.replace('#', '');
+            container = document.getElementById(cleanId);
+        }
+
+        // 2. KIỂM TRA AN TOÀN: Nếu vẫn không tìm thấy thẻ DOM thì dừng an toàn
         if (!container) {
-            console.warn("Không tìm thấy thẻ chứa Navbar!");
+            console.warn("NavbarComponent: Không tìm thấy thẻ chứa Navbar!");
             return;
         }
 
+        // 3. RENDER GIAO DIỆN NAVBAR
         container.innerHTML = `
             <nav class="bg-indigo-900 text-white shadow-md">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,7 +54,7 @@ export const NavbarComponent = {
             </nav>
         `;
 
-        // Lắng nghe sự kiện Đổi mật khẩu
+        // 4. LẮNG NGHE SỰ KIỆN
         const btnChangePass = container.querySelector('#btn-change-pass');
         if (btnChangePass) {
             btnChangePass.addEventListener('click', () => {
@@ -55,7 +62,6 @@ export const NavbarComponent = {
             });
         }
 
-        // Lắng nghe sự kiện Đăng xuất
         const btnLogout = container.querySelector('#btn-logout');
         if (btnLogout && onLogout) {
             btnLogout.addEventListener('click', onLogout);
