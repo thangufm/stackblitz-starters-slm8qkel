@@ -1,7 +1,7 @@
 import { DeptService } from './services/dept-service.js';
 import { NavbarComponent } from './components/navbar.js';
 import { TaskListComponent } from './components/task-list.js';
-import { AuthComponent } from './components/auth.js'; // Chuẩn xác: Dùng auth.js có sẵn từ đầu dự án
+import { AuthView } from './components/auth-view.js'; // Chuẩn xác tệp auth-view.js trong dự án
 import { db, ref, get } from './config/firebase-config.js';
 
 class App {
@@ -13,43 +13,43 @@ class App {
         const loadingEl = document.getElementById('loading');
 
         try {
-            // 1. Khởi tạo dữ liệu mặc định (Phòng ban, Nhân sự, Công việc mẫu)
+            // 1. Khởi tạo dữ liệu phòng ban & nhân sự
             await DeptService.initDefaultData();
 
-            // 2. Kiểm tra phiên đăng nhập từ localStorage
+            // 2. Lấy thông tin user từ localStorage
             const userStr = localStorage.getItem('user');
             if (userStr) {
                 this.currentUser = JSON.parse(userStr);
             }
 
-            // 3. KIỂM TRA BẢO MẬT: Nếu CHƯA ĐĂNG NHẬP -> Bắt buộc hiện Form Đăng nhập
+            // 3. KIỂM TRA BẢO MẬT: Nếu CHƯA ĐĂNG NHẬP -> Gọi Form Đăng nhập (AuthView)
             if (!this.currentUser) {
                 this.renderLogin();
                 return;
             }
 
-            // 4. ĐÃ ĐĂNG NHẬP -> Hiển thị Thanh Tiêu đề Navbar
+            // 4. ĐÃ ĐĂNG NHẬP -> Hiển thị Navbar & Banner thông tin User
             this.renderNavbar();
 
-            // 5. Lấy danh sách công việc từ Firebase Realtime Database
+            // 5. Lấy danh sách công việc từ Firebase
             const taskSnap = await get(ref(db, 'tasks'));
             let tasks = [];
             if (taskSnap.exists()) {
                 tasks = Object.values(taskSnap.val());
             }
 
-            // 6. Hiển thị danh sách công việc dạng Bảng Excel
+            // 6. Render Danh sách công việc dạng Bảng Excel
             const mainContainer = document.getElementById('main-content');
             if (mainContainer) {
                 TaskListComponent.render(mainContainer, tasks, this.currentUser, null, () => {
-                    this.init(); // Tải lại danh sách khi Ban Giám đốc giao việc mới
+                    this.init(); // Reload lại trang khi Ban Giám đốc tạo công việc mới
                 });
             }
 
         } catch (error) {
             console.error("Lỗi khởi tạo ứng dụng:", error);
         } finally {
-            // Đảm bảo luôn ẩn màn hình Chờ (Loading)
+            // Đảm bảo luôn ẩn màn hình Chờ kết nối (Loading)
             if (loadingEl) {
                 loadingEl.classList.add('hidden');
                 loadingEl.style.display = 'none';
@@ -57,7 +57,7 @@ class App {
         }
     }
 
-    // Hiển thị Form Đăng nhập khi chưa đăng nhập
+    // Hiển thị Form Đăng nhập chuẩn từ auth-view.js
     renderLogin() {
         // Xóa Navbar nếu có
         const navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
@@ -65,8 +65,8 @@ class App {
 
         const mainContainer = document.getElementById('main-content');
         if (mainContainer) {
-            AuthComponent.render(mainContainer, (user) => {
-                // Đăng nhập thành công -> Lưu user và tải lại ứng dụng
+            AuthView.render(mainContainer, (user) => {
+                // Đăng nhập thành công -> Lưu session và tải lại ứng dụng
                 this.currentUser = user;
                 localStorage.setItem('user', JSON.stringify(user));
                 this.init();
@@ -94,7 +94,7 @@ class App {
     }
 }
 
-// Chạy ứng dụng khi DOM sẵn sàng
+// Chạy ứng dụng khi DOM hoàn tất
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();
