@@ -2,51 +2,34 @@ import { TaskDetailModalComponent } from './task-detail-modal.js';
 import { TaskFormModalComponent } from './task-form-modal.js';
 
 export const TaskListComponent = {
-    // Biến lưu trạng thái phân trang & bộ lọc
     currentPage: 1,
     pageSize: 15,
 
     render(container, tasks = [], currentUser, onTaskClick, onTaskCreated) {
         if (!container) return;
 
-        // 1. Hàm tính khoảng thời gian Tuần hiện tại (Thứ 2 đến Chủ Nhật)
-        const getThisWeekRange = () => {
-            const now = new Date();
-            const dayOfWeek = now.getDay() || 7; // Chuyển Chủ Nhật từ 0 thành 7
-            
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - dayOfWeek + 1);
-            startOfWeek.setHours(0, 0, 0, 0);
+        // 1. Sắp xếp danh sách công việc mới nhất lên đầu (dựa vào created_at hoặc id)
+        const sortedTasks = [...tasks].sort((a, b) => {
+            const timeA = a.created_at ? new Date(a.created_at).getTime() : (a.id || 0);
+            const timeB = b.created_at ? new Date(b.created_at).getTime() : (b.id || 0);
+            return timeB - timeA; // Mới nhất lên trước
+        });
 
-            const endOfWeek = new Date(now);
-            endOfWeek.setDate(now.getDate() + (7 - dayOfWeek));
-            endOfWeek.setHours(23, 59, 59, 999);
-
-            return {
-                start: startOfWeek.toISOString().split('T')[0],
-                end: endOfWeek.toISOString().split('T')[0]
-            };
-        };
-
-        const defaultWeek = getThisWeekRange();
-
-        // 2. Render Giao diện Thanh Bộc Lọc + Khung Bảng
+        // 2. Render khung Giao diện + Bộ lọc
         container.innerHTML = `
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
                 
-                <!-- THANH BỘ LỌC CÔNG VIỆC -->
+                <!-- THANH BỘ LỌC -->
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
                     
                     <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <!-- Chọn khoảng ngày -->
-                        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl">
-                            <i class="fa-regular fa-calendar-days text-indigo-600"></i>
-                            <span class="font-bold text-slate-600">Từ:</span>
-                            <input type="date" id="filter-from-date" value="${defaultWeek.start}" 
-                                class="bg-transparent font-medium text-slate-700 outline-none cursor-pointer">
-                            <span class="font-bold text-slate-600 ml-1">Đến:</span>
-                            <input type="date" id="filter-to-date" value="${defaultWeek.end}" 
-                                class="bg-transparent font-medium text-slate-700 outline-none cursor-pointer">
+                        <!-- Chọn từ ngày bất kỳ (Để trống mặc định để thấy ngay việc mới nhất) -->
+                        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                            <i class="fa-regular fa-calendar-days text-indigo-600 font-bold"></i>
+                            <span class="font-bold text-slate-600">Xem từ ngày:</span>
+                            <input type="date" id="filter-from-date" 
+                                class="bg-transparent font-semibold text-slate-700 outline-none cursor-pointer"
+                                title="Chọn ngày để xem công việc từ ngày đó trở đi">
                         </div>
 
                         <!-- Lọc Phòng Ban -->
@@ -66,14 +49,14 @@ export const TaskListComponent = {
                             <option value="Hoàn thành">Hoàn thành</option>
                         </select>
 
-                        <!-- Nút Khôi phục Lọc Tuần Này -->
-                        <button id="btn-reset-week" title="Lọc tuần hiện tại" 
-                            class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-xl transition flex items-center gap-1">
-                            <i class="fa-solid fa-arrows-rotate text-[10px]"></i> Tuần này
+                        <!-- Nút Xóa Lọc (Xem toàn bộ) -->
+                        <button id="btn-reset-filter" title="Xem tất cả công việc mới nhất" 
+                            class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-arrows-rotate text-[10px]"></i> Tất cả
                         </button>
                     </div>
 
-                    <!-- Nút Giao việc mới (Chỉ hiển thị cho BGD) -->
+                    <!-- Nút Giao việc mới (Chỉ BGD) -->
                     <div class="flex items-center gap-3">
                         <span class="text-xs text-slate-500">Hiển thị: <b id="task-count-text" class="text-indigo-600">0</b> công việc</span>
                         ${currentUser?.department === 'BGD' ? `
@@ -86,7 +69,7 @@ export const TaskListComponent = {
 
                 </div>
 
-                <!-- BẢNG DANH SÁCH CÔNG VIỆC -->
+                <!-- BẢNG CÔNG VIỆC -->
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="w-full text-xs text-left border-collapse">
                         <thead class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
@@ -109,51 +92,58 @@ export const TaskListComponent = {
 
                 <!-- THANH PHÂN TRANG -->
                 <div id="pagination-container" class="flex items-center justify-between pt-2 text-xs text-slate-600">
-                    <!-- Tự động render nút Phân trang -->
                 </div>
 
             </div>
         `;
 
-        // 3. Hàm lọc & Phân trang dữ liệu
+        // 3. Hàm Lọc & Phân trang Tự động
         const applyFiltersAndRender = () => {
-            const fromDate = document.getElementById('filter-from-date')?.value;
-            const toDate = document.getElementById('filter-to-date')?.value;
+            const selectedFromDate = document.getElementById('filter-from-date')?.value;
             const dept = document.getElementById('filter-dept')?.value;
             const status = document.getElementById('filter-status')?.value;
 
-            // Đổi định dạng DD/MM/YYYY của deadline về YYYY-MM-DD để so sánh ngày
-            const parseDeadline = (dlStr) => {
-                if (!dlStr) return '';
-                const parts = dlStr.split('/');
-                if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                return dlStr;
+            // Chuyển DD/MM/YYYY về YYYY-MM-DD để so sánh ngày
+            const parseDateStr = (dateStr) => {
+                if (!dateStr) return '';
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+                return dateStr;
             };
 
             // Lọc dữ liệu
-            let filtered = tasks.filter(task => {
-                const taskDate = parseDeadline(task.deadline);
-                
-                if (fromDate && taskDate < fromDate) return false;
-                if (toDate && taskDate > toDate) return false;
+            let filtered = sortedTasks.filter(task => {
+                // Kiểm tra ngày tạo hoặc hạn chót
+                if (selectedFromDate) {
+                    const taskCreatedDate = task.created_at ? parseDateStr(task.created_at.split('T')[0]) : '';
+                    const taskDeadline = parseDateStr(task.deadline);
+                    const compareDate = taskCreatedDate || taskDeadline;
+
+                    if (compareDate && compareDate < selectedFromDate) {
+                        return false;
+                    }
+                }
+
                 if (dept && task.department !== dept) return false;
                 if (status && task.status !== status) return false;
 
                 return true;
             });
 
-            // Cập nhật số lượng
+            // Cập nhật số lượng đếm
             const countText = document.getElementById('task-count-text');
             if (countText) countText.textContent = filtered.length;
 
-            // Tính toán Phân trang
+            // Tính Phân trang (>15 công việc)
             const totalPages = Math.ceil(filtered.length / this.pageSize) || 1;
             if (this.currentPage > totalPages) this.currentPage = totalPages;
 
             const startIndex = (this.currentPage - 1) * this.pageSize;
             const paginatedTasks = filtered.slice(startIndex, startIndex + this.pageSize);
 
-            // 4. Render Rows Bảng
+            // Render Nội dung Bảng
             const tbody = document.getElementById('task-table-body');
             if (!tbody) return;
 
@@ -161,7 +151,7 @@ export const TaskListComponent = {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="p-8 text-center text-slate-400 font-medium">
-                            Không tìm thấy công việc nào trong khoảng thời gian đã chọn.
+                            Không có công việc nào từ ngày đã chọn.
                         </td>
                     </tr>
                 `;
@@ -190,7 +180,7 @@ export const TaskListComponent = {
                     </tr>
                 `).join('');
 
-                // Gán sự kiện click dòng mở Modal Chi tiết
+                // Click mở Chi tiết
                 tbody.querySelectorAll('tr[data-task-id]').forEach(row => {
                     row.onclick = () => {
                         const taskId = row.getAttribute('data-task-id');
@@ -200,11 +190,11 @@ export const TaskListComponent = {
                 });
             }
 
-            // 5. Render Nút Phân trang (Nếu > 15 công việc)
+            // Render Nút Phân trang
             const pagContainer = document.getElementById('pagination-container');
             if (pagContainer) {
                 if (filtered.length <= this.pageSize) {
-                    pagContainer.innerHTML = `<span>Hiển thị toàn bộ ${filtered.length} kết quả</span>`;
+                    pagContainer.innerHTML = `<span class="text-slate-400">Đang hiển thị toàn bộ ${filtered.length} công việc</span>`;
                 } else {
                     pagContainer.innerHTML = `
                         <div>Trang <b>${this.currentPage}</b> / <b>${totalPages}</b> (Tổng ${filtered.length} công việc)</div>
@@ -237,29 +227,32 @@ export const TaskListComponent = {
             }
         };
 
-        // 6. Lắng nghe sự kiện thay đổi bộ lọc
-        document.getElementById('filter-from-date')?.addEventListener('change', () => { this.currentPage = 1; applyFiltersAndRender(); });
-        document.getElementById('filter-to-date')?.addEventListener('change', () => { this.currentPage = 1; applyFiltersAndRender(); });
+        // 4. BẮT SỰ KIỆN TỰ ĐỘNG THAY ĐỔI
+        // Sự kiện 'input' & 'change' giúp bảng cập nhật TỨC THÌ ngay khi chọn ngày
+        const dateInput = document.getElementById('filter-from-date');
+        if (dateInput) {
+            dateInput.addEventListener('change', () => { this.currentPage = 1; applyFiltersAndRender(); });
+            dateInput.addEventListener('input', () => { this.currentPage = 1; applyFiltersAndRender(); });
+        }
+
         document.getElementById('filter-dept')?.addEventListener('change', () => { this.currentPage = 1; applyFiltersAndRender(); });
         document.getElementById('filter-status')?.addEventListener('change', () => { this.currentPage = 1; applyFiltersAndRender(); });
 
-        // Nút đặt lại Tuần Hiện Tại
-        document.getElementById('btn-reset-week')?.addEventListener('click', () => {
-            const week = getThisWeekRange();
-            document.getElementById('filter-from-date').value = week.start;
-            document.getElementById('filter-to-date').value = week.end;
+        // Nút đặt lại hiển thị tất cả
+        document.getElementById('btn-reset-filter')?.addEventListener('click', () => {
+            if (dateInput) dateInput.value = '';
             document.getElementById('filter-dept').value = '';
             document.getElementById('filter-status').value = '';
             this.currentPage = 1;
             applyFiltersAndRender();
         });
 
-        // Nút Mở Modal Tạo Việc Mới
+        // Nút Tạo việc mới
         document.getElementById('btn-open-create-task')?.addEventListener('click', () => {
             TaskFormModalComponent.render(currentUser, onTaskCreated);
         });
 
-        // Chạy lọc lần đầu
+        // Chạy lọc hiển thị lần đầu
         applyFiltersAndRender();
     }
 };
