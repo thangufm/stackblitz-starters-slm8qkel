@@ -1,11 +1,11 @@
 import { DeptService } from '../services/dept-service.js';
 import { TaskDetailModalComponent } from './task-detail-modal.js';
+import { TaskFormModalComponent } from './task-form-modal.js';
 
 export const TaskListComponent = {
-    render(container, tasks = [], currentUser = null, onSelectTask = null) {
+    render(container, tasks = [], currentUser = null, onSelectTask = null, onTaskCreated = null) {
         const departments = DeptService.getDepartments();
 
-        // Biến lưu trạng thái lọc
         let selectedDept = 'ALL';
         let selectedStatus = 'ALL';
 
@@ -15,6 +15,31 @@ export const TaskListComponent = {
                 const matchStatus = selectedStatus === 'ALL' || task.status === selectedStatus;
                 return matchDept && matchStatus;
             });
+        };
+
+        // Hàm định dạng ngày DD/MM/YYYY
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'N/A';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        };
+
+        // Hàm phân màu Badge theo Phòng Ban (Yêu cầu 1)
+        const getDeptBadge = (deptId) => {
+            const deptName = DeptService.getDeptName(deptId);
+            switch (deptId) {
+                case 'dept_bgd':
+                    return `<span class="bg-purple-100 text-purple-800 text-[11px] font-semibold px-2 py-0.5 rounded border border-purple-200">${deptName}</span>`;
+                case 'dept_hctv':
+                    return `<span class="bg-blue-100 text-blue-800 text-[11px] font-semibold px-2 py-0.5 rounded border border-blue-200">${deptName}</span>`;
+                case 'dept_dtkhqlsv':
+                    return `<span class="bg-emerald-100 text-emerald-800 text-[11px] font-semibold px-2 py-0.5 rounded border border-emerald-200">${deptName}</span>`;
+                default:
+                    return `<span class="bg-slate-100 text-slate-700 text-[11px] font-semibold px-2 py-0.5 rounded border border-slate-200">${deptName}</span>`;
+            }
         };
 
         const renderTableRows = () => {
@@ -40,45 +65,33 @@ export const TaskListComponent = {
             tableBody.innerHTML = filtered.map((task, index) => {
                 const priorityBadge = getPriorityBadge(task.priority);
                 const statusBadge = getStatusBadge(task.status);
-                const deptName = DeptService.getDeptName(task.deptId);
+                const deptBadge = getDeptBadge(task.deptId);
 
                 return `
                     <tr class="hover:bg-indigo-50/50 transition duration-150 border-b border-slate-200 text-xs text-slate-700 cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}"
                         data-task-id="${task.id}">
-                        <!-- STT -->
                         <td class="px-3 py-3 text-center font-medium text-slate-400 border-r border-slate-200 w-12">
                             ${index + 1}
                         </td>
-
-                        <!-- Tiêu đề & Mô tả ngắn -->
                         <td class="px-4 py-3 border-r border-slate-200">
                             <div class="font-bold text-slate-800 hover:text-indigo-600 transition line-clamp-1">
                                 ${task.title}
                             </div>
                             ${task.description ? `<div class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">${task.description}</div>` : ''}
                         </td>
-
-                        <!-- Phòng ban -->
-                        <td class="px-3 py-3 border-r border-slate-200 font-medium text-slate-600 whitespace-nowrap">
-                            ${deptName}
+                        <!-- Cột đơn vị phân màu -->
+                        <td class="px-3 py-3 border-r border-slate-200 whitespace-nowrap">
+                            ${deptBadge}
                         </td>
-
-                        <!-- Người thực hiện -->
                         <td class="px-3 py-3 border-r border-slate-200 font-medium text-indigo-700 whitespace-nowrap">
                             <i class="fa-regular fa-user mr-1 text-indigo-400"></i>${task.assigneeName || 'Chưa gán'}
                         </td>
-
-                        <!-- Mức độ ưu tiên -->
                         <td class="px-3 py-3 border-r border-slate-200 text-center whitespace-nowrap">
                             ${priorityBadge}
                         </td>
-
-                        <!-- Trạng thái -->
                         <td class="px-3 py-3 border-r border-slate-200 text-center whitespace-nowrap">
                             ${statusBadge}
                         </td>
-
-                        <!-- Tiến độ -->
                         <td class="px-3 py-3 border-r border-slate-200 whitespace-nowrap w-32">
                             <div class="flex items-center gap-2">
                                 <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -87,22 +100,18 @@ export const TaskListComponent = {
                                 <span class="text-[11px] font-bold text-slate-600 w-8 text-right">${task.progress || 0}%</span>
                             </div>
                         </td>
-
-                        <!-- Hạn chót -->
-                        <td class="px-3 py-3 text-center font-medium text-slate-600 whitespace-nowrap">
-                            ${task.dueDate || 'N/A'}
+                        <!-- Cột Hạn chót dạng DD/MM/YYYY -->
+                        <td class="px-3 py-3 text-center font-semibold text-slate-700 whitespace-nowrap">
+                            ${formatDate(task.dueDate)}
                         </td>
                     </tr>
                 `;
             }).join('');
 
-            // Gán sự kiện click cho từng dòng công việc
             tableBody.querySelectorAll('[data-task-id]').forEach(row => {
                 row.addEventListener('click', () => {
                     const taskId = row.getAttribute('data-task-id');
                     const task = tasks.find(t => t.id === taskId);
-                    
-                    // Gọi Popup hiển thị chi tiết công việc
                     if (task) {
                         TaskDetailModalComponent.render(task, currentUser);
                         if (onSelectTask) onSelectTask(task);
@@ -111,23 +120,22 @@ export const TaskListComponent = {
             });
         };
 
-        // Render cấu trúc bảng kiểu Excel
+        // Kiểm tra xem User có phải thuộc Ban Giám đốc hoặc Admin không (Yêu cầu 3)
+        const isBGD = currentUser && (currentUser.deptId === 'dept_bgd' || currentUser.role === 'admin');
+
         container.innerHTML = `
             <div class="space-y-4">
-                <!-- Thanh công cụ & Bộ lọc -->
                 <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap items-center gap-2.5">
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">
                             <i class="fa-solid fa-filter mr-1"></i>Lọc:
                         </span>
                         
-                        <!-- Lọc Phòng Ban -->
                         <select id="filter-dept" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50">
                             <option value="ALL">-- Tất cả phòng ban --</option>
                             ${departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
                         </select>
 
-                        <!-- Lọc Trạng Thái -->
                         <select id="filter-status" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50">
                             <option value="ALL">-- Tất cả trạng thái --</option>
                             <option value="CHO_XU_LY">Chờ xử lý</option>
@@ -137,12 +145,20 @@ export const TaskListComponent = {
                         </select>
                     </div>
 
-                    <div class="text-xs text-slate-500 font-medium">
-                        Tổng số: <span id="task-count" class="font-bold text-indigo-600">${tasks.length}</span> công việc
+                    <div class="flex items-center gap-3">
+                        <div class="text-xs text-slate-500 font-medium">
+                            Tổng số: <span id="task-count" class="font-bold text-indigo-600">${tasks.length}</span> công việc
+                        </div>
+
+                        <!-- Nút Giao việc mới dành riêng cho Ban Giám đốc (Yêu cầu 3) -->
+                        ${isBGD ? `
+                            <button id="btn-create-task" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-plus"></i> Giao việc mới
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
 
-                <!-- Bảng Dữ Liệu Kiểu Excel -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full border-collapse text-left">
@@ -158,18 +174,16 @@ export const TaskListComponent = {
                                     <th class="px-3 py-2.5 text-center w-28">Hạn Chót</th>
                                 </tr>
                             </thead>
-                            <tbody id="task-table-body">
-                                <!-- Các dòng dữ liệu được render tại đây -->
-                            </tbody>
+                            <tbody id="task-table-body"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         `;
 
-        // Lắng nghe sự kiện bộ lọc
         const deptSelect = container.querySelector('#filter-dept');
         const statusSelect = container.querySelector('#filter-status');
+        const btnCreateTask = container.querySelector('#btn-create-task');
 
         deptSelect.addEventListener('change', (e) => {
             selectedDept = e.target.value;
@@ -181,12 +195,16 @@ export const TaskListComponent = {
             renderTableRows();
         });
 
-        // Khởi tạo hiển thị dòng dữ liệu
+        if (btnCreateTask) {
+            btnCreateTask.addEventListener('click', () => {
+                TaskFormModalComponent.render(currentUser, onTaskCreated);
+            });
+        }
+
         renderTableRows();
     }
 };
 
-// Hàm bổ trợ hiển thị Nhãn Ưu tiên
 function getPriorityBadge(priority) {
     switch (priority) {
         case 'KHAN':
@@ -200,7 +218,6 @@ function getPriorityBadge(priority) {
     }
 }
 
-// Hàm bổ trợ hiển thị Nhãn Trạng thái
 function getStatusBadge(status) {
     switch (status) {
         case 'CHO_XU_LY':
