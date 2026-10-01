@@ -1,7 +1,7 @@
 import { DeptService } from './services/dept-service.js';
 import { NavbarComponent } from './components/navbar.js';
 import { TaskListComponent } from './components/task-list.js';
-import { LoginComponent } from './components/login.js'; // Nhập component Đăng nhập
+import { AuthComponent } from './components/auth.js'; // Chuẩn xác: Dùng auth.js có sẵn từ đầu dự án
 import { db, ref, get } from './config/firebase-config.js';
 
 class App {
@@ -16,19 +16,19 @@ class App {
             // 1. Khởi tạo dữ liệu mặc định (Phòng ban, Nhân sự, Công việc mẫu)
             await DeptService.initDefaultData();
 
-            // 2. Kiểm tra thông tin người dùng đã đăng nhập chưa
+            // 2. Kiểm tra phiên đăng nhập từ localStorage
             const userStr = localStorage.getItem('user');
             if (userStr) {
                 this.currentUser = JSON.parse(userStr);
             }
 
-            // 3. KIỂM TRA BẢO MẬT: Nếu CHƯA ĐĂNG NHẬP -> Hiển thị Form Đăng nhập
+            // 3. KIỂM TRA BẢO MẬT: Nếu CHƯA ĐĂNG NHẬP -> Bắt buộc hiện Form Đăng nhập
             if (!this.currentUser) {
                 this.renderLogin();
                 return;
             }
 
-            // 4. Nếu ĐÃ ĐĂNG NHẬP -> Hiển thị Thanh Tiêu đề Navbar
+            // 4. ĐÃ ĐĂNG NHẬP -> Hiển thị Thanh Tiêu đề Navbar
             this.renderNavbar();
 
             // 5. Lấy danh sách công việc từ Firebase Realtime Database
@@ -38,18 +38,18 @@ class App {
                 tasks = Object.values(taskSnap.val());
             }
 
-            // 6. Hiển thị danh sách công việc dạng Bảng
+            // 6. Hiển thị danh sách công việc dạng Bảng Excel
             const mainContainer = document.getElementById('main-content');
             if (mainContainer) {
                 TaskListComponent.render(mainContainer, tasks, this.currentUser, null, () => {
-                    this.init(); // Tải lại danh sách sau khi Ban Giám đốc tạo công việc mới
+                    this.init(); // Tải lại danh sách khi Ban Giám đốc giao việc mới
                 });
             }
 
         } catch (error) {
             console.error("Lỗi khởi tạo ứng dụng:", error);
         } finally {
-            // Đảm bảo luôn ẩn màn hình Chờ kết nối (Loading)
+            // Đảm bảo luôn ẩn màn hình Chờ (Loading)
             if (loadingEl) {
                 loadingEl.classList.add('hidden');
                 loadingEl.style.display = 'none';
@@ -57,16 +57,16 @@ class App {
         }
     }
 
-    // Hàm hiển thị Form Đăng Nhập
+    // Hiển thị Form Đăng nhập khi chưa đăng nhập
     renderLogin() {
-        // Xóa thanh Navbar nếu có
+        // Xóa Navbar nếu có
         const navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
         if (navbarContainer) navbarContainer.innerHTML = '';
 
         const mainContainer = document.getElementById('main-content');
         if (mainContainer) {
-            LoginComponent.render(mainContainer, (user) => {
-                // Khi đăng nhập thành công: Lưu thông tin vào localStorage và chạy lại ứng dụng
+            AuthComponent.render(mainContainer, (user) => {
+                // Đăng nhập thành công -> Lưu user và tải lại ứng dụng
                 this.currentUser = user;
                 localStorage.setItem('user', JSON.stringify(user));
                 this.init();
@@ -74,7 +74,7 @@ class App {
         }
     }
 
-    // Hàm hiển thị Navbar Header
+    // Hiển thị Thanh Navbar Header
     renderNavbar() {
         let navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
         
@@ -87,14 +87,14 @@ class App {
         NavbarComponent.render(navbarContainer, this.currentUser, () => this.handleLogout());
     }
 
-    // Hàm Xử lý Đăng xuất
+    // Xử lý Đăng xuất
     handleLogout() {
         localStorage.removeItem('user');
         window.location.reload();
     }
 }
 
-// Chạy ứng dụng khi DOM hoàn tất
+// Chạy ứng dụng khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();
