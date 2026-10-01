@@ -1,7 +1,7 @@
 import { DeptService } from './services/dept-service.js';
 import { NavbarComponent } from './components/navbar.js';
 import { TaskListComponent } from './components/task-list.js';
-import { AuthView } from './components/auth-view.js'; // Chuẩn xác tệp auth-view.js trong dự án
+import { AAuthViewComponent } from './components/auth-view.js'; // Chuẩn xác tệp auth-view.js trong dự án
 import { db, ref, get } from './config/firebase-config.js';
 
 class App {
@@ -59,14 +59,13 @@ class App {
 
     // Hiển thị Form Đăng nhập chuẩn từ auth-view.js
     renderLogin() {
-        // Xóa Navbar nếu có
         const navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
         if (navbarContainer) navbarContainer.innerHTML = '';
 
         const mainContainer = document.getElementById('main-content');
         if (mainContainer) {
-            AuthView.render(mainContainer, (user) => {
-                // Đăng nhập thành công -> Lưu session và tải lại ứng dụng
+            // Sửa AuthView.render -> AuthViewComponent.render
+            AuthViewComponent.render(mainContainer, (user) => {
                 this.currentUser = user;
                 localStorage.setItem('user', JSON.stringify(user));
                 this.init();
