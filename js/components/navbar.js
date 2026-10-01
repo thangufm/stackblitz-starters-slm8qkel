@@ -1,9 +1,13 @@
+import { ChangePassModalComponent } from './change-pass-modal.js';
+
 export const NavbarComponent = {
     render(container, currentUser, onLogout) {
-        // 1. Tìm thẻ chứa
+        // 1. Kiểm tra & lấy thẻ DOM chứa an toàn
         let targetElement = null;
+
         if (typeof container === 'string') {
-            targetElement = document.getElementById(container.replace('#', '')) || document.querySelector(container);
+            const cleanId = container.replace('#', '');
+            targetElement = document.getElementById(cleanId) || document.querySelector(container);
         } else if (container && container.nodeType === 1) {
             targetElement = container;
         } else {
@@ -11,41 +15,74 @@ export const NavbarComponent = {
         }
 
         if (!targetElement) {
-            console.warn("Navbar: Không tìm thấy element chứa navbar");
+            console.warn("NavbarComponent: Không tìm thấy thẻ chứa Navbar!");
             return;
         }
 
         const name = currentUser?.fullName || 'Người dùng';
-        const position = currentUser?.position || '';
+        const position = currentUser?.position || 'Thành viên';
         const avatarLetter = name.trim().charAt(0).toUpperCase();
 
-        // 2. Gán HTML trực tiếp
+        // 2. Render Giao diện Banner Header
         targetElement.innerHTML = `
-            <div style="background:#1e1b4b; color:#fff; padding: 12px 20px; display:flex; justify-size:space-between; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:20px;">📋</span>
-                    <div>
-                        <div style="font-weight:bold; font-size:14px; text-transform:uppercase;">QUẢN LÝ CÔNG VIỆC UFM - PHÂN HIỆU QUẢNG NGÃI</div>
-                        <div style="font-size:11px; color:#a5b4fc;">Hệ thống theo dõi & Điều hành công việc</div>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="display:flex; align-items:center; gap:8px; background:#312e81; padding:4px 10px; border-radius:6px;">
-                        <div style="width:28px; height:28px; background:#4f46e5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px;">${avatarLetter}</div>
-                        <div style="text-align:right;">
-                            <div style="font-size:12px; font-weight:bold;">${name}</div>
-                            <div style="font-size:10px; color:#c7d2fe;">${position}</div>
+            <header class="bg-indigo-900 text-white shadow-md w-full">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between h-16">
+                        
+                        <!-- Logo & Tiêu đề -->
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-indigo-800 border border-indigo-700 flex items-center justify-center font-bold text-lg text-indigo-200">
+                                <i class="fa-solid fa-list-check"></i>
+                            </div>
+                            <div>
+                                <h1 class="font-bold text-sm sm:text-base leading-tight uppercase tracking-wide text-white">
+                                    QUẢN LÝ CÔNG VIỆC UFM - PHÂN HIỆU QUẢNG NGÃI
+                                </h1>
+                                <p class="text-[11px] text-indigo-300 font-medium">Hệ thống theo dõi & Điều hành công việc</p>
+                            </div>
                         </div>
+
+                        <!-- Thông tin Người dùng & Nút thao tác -->
+                        <div class="flex items-center gap-3">
+                            <div class="hidden sm:flex items-center gap-2.5 bg-indigo-800/80 border border-indigo-700/80 px-3 py-1.5 rounded-xl">
+                                <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase">
+                                    ${avatarLetter}
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs font-bold text-white leading-tight">${name}</div>
+                                    <div class="text-[10px] text-indigo-200 font-medium">${position}</div>
+                                </div>
+                            </div>
+
+                            <!-- Nút Đổi Mật Khẩu -->
+                            <button id="btn-change-pass" title="Đổi mật khẩu" 
+                                class="px-3 py-1.5 bg-indigo-800 hover:bg-indigo-700 text-indigo-100 rounded-lg text-xs font-medium transition border border-indigo-700 flex items-center gap-1">
+                                <i class="fa-solid fa-key text-indigo-300"></i>
+                                <span class="hidden md:inline">Đổi mật khẩu</span>
+                            </button>
+
+                            <!-- Nút Đăng Xuất -->
+                            <button id="btn-logout" title="Đăng xuất" 
+                                class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-sm">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                <span class="hidden md:inline">Đăng xuất</span>
+                            </button>
+                        </div>
+
                     </div>
-                    <button id="btn-logout" style="background:#e11d48; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
-                        Đăng xuất
-                    </button>
                 </div>
-            </div>
+            </header>
         `;
 
-        // 3. Gán sự kiện nút Đăng xuất
+        // 3. Lắng nghe sự kiện click
         setTimeout(() => {
+            const btnChangePass = document.getElementById('btn-change-pass');
+            if (btnChangePass) {
+                btnChangePass.onclick = () => {
+                    ChangePassModalComponent.render(currentUser);
+                };
+            }
+
             const btnLogout = document.getElementById('btn-logout');
             if (btnLogout && typeof onLogout === 'function') {
                 btnLogout.onclick = onLogout;

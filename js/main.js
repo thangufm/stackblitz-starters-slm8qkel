@@ -30,14 +30,16 @@ class App {
     }
 
     renderNavbar() {
-        const navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
+        // Tự động tìm thẻ chứa Navbar hoặc tự tạo nếu trong index.html chưa có
+        let navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
         
-        if (navbarContainer) {
-            // Render Navbar chứa logo, tên user, chức vụ, nút đổi mật khẩu & đăng xuất
-            NavbarComponent.render(navbarContainer, this.currentUser, () => this.handleLogout());
-        } else {
-            console.error("Không tìm thấy thẻ <div id='navbar'></div> trong file index.html");
+        if (!navbarContainer) {
+            navbarContainer = document.createElement('div');
+            navbarContainer.id = 'navbar';
+            document.body.insertBefore(navbarContainer, document.body.firstChild);
         }
+    
+        NavbarComponent.render(navbarContainer, this.currentUser, () => this.handleLogout());
     }
 
     loadAuthView() {
