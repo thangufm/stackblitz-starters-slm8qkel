@@ -1,8 +1,5 @@
-import { ChangePassModalComponent } from './change-pass-modal.js';
-
 export const NavbarComponent = {
     render(container, currentUser, onLogout) {
-        // 1. Kiểm tra & lấy thẻ DOM chứa an toàn
         let targetElement = null;
 
         if (typeof container === 'string') {
@@ -14,16 +11,12 @@ export const NavbarComponent = {
             targetElement = document.getElementById('navbar') || document.getElementById('navbar-container');
         }
 
-        if (!targetElement) {
-            console.warn("NavbarComponent: Không tìm thấy thẻ chứa Navbar!");
-            return;
-        }
+        if (!targetElement) return;
 
         const name = currentUser?.fullName || 'Người dùng';
         const position = currentUser?.position || 'Thành viên';
         const avatarLetter = name.trim().charAt(0).toUpperCase();
 
-        // 2. Render Giao diện Banner Header
         targetElement.innerHTML = `
             <header class="bg-indigo-900 text-white shadow-md w-full">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,7 +35,7 @@ export const NavbarComponent = {
                             </div>
                         </div>
 
-                        <!-- Thông tin Người dùng & Nút thao tác -->
+                        <!-- Thông tin Người dùng & Thao tác -->
                         <div class="flex items-center gap-3">
                             <div class="hidden sm:flex items-center gap-2.5 bg-indigo-800/80 border border-indigo-700/80 px-3 py-1.5 rounded-xl">
                                 <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase">
@@ -74,12 +67,17 @@ export const NavbarComponent = {
             </header>
         `;
 
-        // 3. Lắng nghe sự kiện click
+        // Sự kiện Click
         setTimeout(() => {
             const btnChangePass = document.getElementById('btn-change-pass');
             if (btnChangePass) {
-                btnChangePass.onclick = () => {
-                    ChangePassModalComponent.render(currentUser);
+                btnChangePass.onclick = async () => {
+                    try {
+                        const { ChangePassModalComponent } = await import('./change-pass-modal.js');
+                        ChangePassModalComponent.render(currentUser);
+                    } catch (e) {
+                        console.error("Lỗi load modal đổi mật khẩu:", e);
+                    }
                 };
             }
 

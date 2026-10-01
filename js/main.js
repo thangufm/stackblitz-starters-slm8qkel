@@ -1,36 +1,56 @@
-import { AuthService } from './services/auth-service.js';
 import { DeptService } from './services/dept-service.js';
-import { TaskService } from './services/task-service.js';
 import { NavbarComponent } from './components/navbar.js';
-import { AuthViewComponent } from './components/auth-view.js';
 import { TaskListComponent } from './components/task-list.js';
-import { TaskFormComponent } from './components/task-form.js';
+import { db, ref, get } from './config/firebase-config.js';
 
 class App {
     constructor() {
         this.currentUser = null;
-        this.unsubscribeTasks = null;
-        this.tasks = [];
     }
 
     async init() {
-        // Tự động đẩy danh sách phòng ban và nhân sự lên Firebase nếu chưa có
-        DeptService.initDefaultData().catch(err => {
-            console.warn("Không thể đồng bộ dữ liệu ban đầu:", err);
-        });
+        const loadingEl = document.getElementById('loading');
 
-        this.currentUser = AuthService.getCurrentUser();
-        this.renderNavbar();
+        try {
+            // 1. Khởi tạo dữ liệu mồi
+            await DeptService.initDefaultData();
 
-        if (this.currentUser) {
-            this.loadDashboard();
-        } else {
-            this.loadAuthView();
+            // 2. Lấy thông tin user đăng nhập từ localStorage
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                this.currentUser = JSON.parse(userStr);
+            }
+
+            // 3. Render Navbar
+            this.renderNavbar();
+
+            // 4. Lấy dữ liệu công việc từ Firebase
+            const taskSnap = await get(ref(db, 'tasks'));
+            let tasks = [];
+            if (taskSnap.exists()) {
+                tasks = Object.values(taskSnap.val());
+            }
+
+            // 5. Render danh sách công việc
+            const mainContainer = document.getElementById('main-content');
+            if (mainContainer) {
+                TaskListComponent.render(mainContainer, tasks, this.currentUser, null, () => {
+                    this.init(); // Reload danh sách khi giao việc mới
+                });
+            }
+
+        } catch (error) {
+            console.error("Lỗi khởi tạo App:", error);
+        } finally {
+            // ĐẢM BẢO ẨN MÀN HÌNH LOADING
+            if (loadingEl) {
+                loadingEl.classList.add('hidden');
+                loadingEl.style.display = 'none';
+            }
         }
     }
 
     renderNavbar() {
-        // Tự động tìm thẻ chứa Navbar hoặc tự tạo nếu trong index.html chưa có
         let navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
         
         if (!navbarContainer) {
@@ -38,67 +58,17 @@ class App {
             navbarContainer.id = 'navbar';
             document.body.insertBefore(navbarContainer, document.body.firstChild);
         }
-    
+
         NavbarComponent.render(navbarContainer, this.currentUser, () => this.handleLogout());
     }
 
-    loadAuthView() {
-        if (this.unsubscribeTasks) {
-            this.unsubscribeTasks();
-            this.unsubscribeTasks = null;
-        }
-
-        const appContainer = document.getElementById('app-container');
-        if (appContainer) {
-            AuthViewComponent.render(appContainer, (user) => {
-                this.currentUser = user;
-                this.renderNavbar();
-                this.loadDashboard();
-            });
-        }
-    }
-
-    loadDashboard() {
-        const appContainer = document.getElementById('app-container');
-        if (!appContainer) return;
-
-        appContainer.innerHTML = `
-            <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-                <div id="task-list-container"></div>
-            </div>
-        `;
-
-        const taskListContainer = document.getElementById('task-list-container');
-
-        this.unsubscribeTasks = TaskService.subscribeTasks((taskList) => {
-            this.tasks = taskList;
-            TaskListComponent.render(
-                taskListContainer,
-                this.tasks,
-                this.currentUser,
-                (taskData) => this.openTaskModal(taskData)
-            );
-        });
-    }
-
-    openTaskModal(taskData = null) {
-        TaskFormComponent.render(this.currentUser, taskData, () => {});
-    }
-
     handleLogout() {
-        AuthService.logout();
-        this.currentUser = null;
-        this.renderNavbar();
-        this.loadAuthView();
-    }
-
-    handleNavigate(view) {
-        if (view === 'tasks' && this.currentUser) {
-            this.loadDashboard();
-        }
+        localStorage.removeItem('user');
+        window.location.reload();
     }
 }
 
+// Khởi chạy ứng dụng khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();
