@@ -2,7 +2,6 @@ import { ChangePassModalComponent } from './change-pass-modal.js';
 
 export const NavbarComponent = {
     render(container, currentUser, onLogout) {
-        // 1. Xác định thẻ DOM chứa Navbar (xử lý an toàn cho mọi kiểu truyền vào)
         let targetElement = null;
 
         if (typeof container === 'string') {
@@ -10,63 +9,71 @@ export const NavbarComponent = {
         } else if (container && container.nodeType === 1) {
             targetElement = container;
         } else {
-            // Trường hợp container truyền vào là null/undefined hoặc object khác, tìm mặc định theo id #navbar
-            targetElement = document.getElementById('navbar') || document.querySelector('header');
+            targetElement = document.getElementById('navbar');
         }
 
-        // Nếu vẫn không tìm thấy thẻ DOM nào trên trang thì dừng an toàn
-        if (!targetElement) {
-            console.warn("NavbarComponent: Không tìm thấy thẻ chứa Navbar trong index.html");
-            return;
-        }
+        if (!targetElement) return;
 
-        // 2. Gán HTML giao diện
         targetElement.innerHTML = `
-            <nav class="bg-indigo-900 text-white shadow-md">
+            <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-40">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-between h-16">
                         
-                        <!-- Tiêu đề phần mềm -->
+                        <!-- Logo & Tiêu đề ứng dụng -->
                         <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-list-check text-2xl text-indigo-300"></i>
+                            <div class="w-10 h-10 rounded-xl bg-indigo-700/80 border border-indigo-500/30 flex items-center justify-center shadow-inner">
+                                <i class="fa-solid fa-list-check text-xl text-indigo-200"></i>
+                            </div>
                             <div>
-                                <h1 class="font-bold text-sm sm:text-base leading-tight tracking-wide uppercase">
+                                <h1 class="font-bold text-sm sm:text-base tracking-wide uppercase leading-tight text-white">
                                     QUẢN LÝ CÔNG VIỆC UFM - PHÂN HIỆU QUẢNG NGÃI
                                 </h1>
+                                <p class="text-[11px] text-indigo-300 font-medium">Hệ thống theo dõi & Điều hành công việc</p>
                             </div>
                         </div>
 
-                        <!-- Góc phải User & Thao tác -->
+                        <!-- Thông tin Người đăng nhập & Thao tác -->
                         <div class="flex items-center gap-3">
-                            <div class="hidden sm:block text-right border-r border-indigo-700/60 pr-3">
-                                <div class="text-xs font-bold text-white">${currentUser?.fullName || 'Người dùng'}</div>
-                                <div class="text-[11px] text-indigo-200">${currentUser?.position || ''}</div>
+                            <!-- Khối hiển thị thông tin User -->
+                            <div class="hidden sm:flex items-center gap-2.5 bg-indigo-800/60 border border-indigo-700/80 px-3 py-1.5 rounded-xl">
+                                <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                                    ${currentUser?.fullName ? currentUser.fullName.charAt(0) : 'U'}
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs font-bold text-white leading-tight">
+                                        ${currentUser?.fullName || 'Chưa đăng nhập'}
+                                    </div>
+                                    <div class="text-[10px] text-indigo-200 font-medium">
+                                        ${currentUser?.position || 'Thành viên'}
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Nút Đổi Mật Khẩu -->
-                            <button id="btn-change-pass" title="Đổi mật khẩu" class="px-2.5 py-1.5 bg-indigo-800 hover:bg-indigo-700 text-indigo-100 rounded-lg text-xs font-medium transition border border-indigo-700 flex items-center gap-1">
-                                <i class="fa-solid fa-key"></i>
+                            <button id="btn-change-pass" title="Đổi mật khẩu" 
+                                class="px-3 py-1.5 bg-indigo-800 hover:bg-indigo-700 text-indigo-100 rounded-lg text-xs font-medium transition border border-indigo-700 flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-key text-indigo-300"></i>
                                 <span class="hidden md:inline">Đổi mật khẩu</span>
                             </button>
 
                             <!-- Nút Đăng Xuất -->
-                            <button id="btn-logout" title="Đăng xuất" class="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition shadow-sm flex items-center gap-1">
+                            <button id="btn-logout" title="Đăng xuất" 
+                                class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition shadow-sm flex items-center gap-1.5">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                                 <span class="hidden md:inline">Đăng xuất</span>
                             </button>
                         </div>
+
                     </div>
                 </div>
-            </nav>
+            </header>
         `;
 
-        // 3. Lắng nghe sự kiện (Sử dụng document.getElementById để đảm bảo không phụ thuộc vào container)
+        // Gán sự kiện cho các nút
         setTimeout(() => {
             const btnChangePass = document.getElementById('btn-change-pass');
             if (btnChangePass) {
-                btnChangePass.onclick = () => {
-                    ChangePassModalComponent.render(currentUser);
-                };
+                btnChangePass.onclick = () => ChangePassModalComponent.render(currentUser);
             }
 
             const btnLogout = document.getElementById('btn-logout');

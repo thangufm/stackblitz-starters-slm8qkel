@@ -30,11 +30,14 @@ class App {
     }
 
     renderNavbar() {
-        NavbarComponent.render(
-            this.currentUser,
-            () => this.handleLogout(),
-            (view) => this.handleNavigate(view)
-        );
+        const navbarContainer = document.getElementById('navbar') || document.getElementById('navbar-container');
+        
+        if (navbarContainer) {
+            // Render Navbar chứa logo, tên user, chức vụ, nút đổi mật khẩu & đăng xuất
+            NavbarComponent.render(navbarContainer, this.currentUser, () => this.handleLogout());
+        } else {
+            console.error("Không tìm thấy thẻ <div id='navbar'></div> trong file index.html");
+        }
     }
 
     loadAuthView() {
