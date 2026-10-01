@@ -8,7 +8,7 @@ export const TaskListComponent = {
     render(container, tasks = [], currentUser, onTaskClick, onTaskCreated) {
         if (!container) return;
 
-        // 1. Bản đồ tự động gắn Phòng Ban theo Người thực hiện (Fallback nếu Firebase chưa lưu phòng ban)
+        // 1. Bản đồ tự động gắn Phòng Ban theo Người thực hiện
         const assigneeDeptMap = {
             'Lê Xuân Lâm': 'Ban Giám đốc',
             'Bùi Thị Yến Linh': 'Ban Giám đốc',
@@ -94,7 +94,7 @@ export const TaskListComponent = {
                         <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
                             <tr>
                                 <th class="p-3 text-center w-12">STT</th>
-                                <th class="p-3 min-w-[220px]">TÊN CÔNG VIỆC / NỘI DUNG</th>
+                                <th class="p-3 min-w-[240px]">TÊN CÔNG VIỆC / NỘI DUNG</th>
                                 <th class="p-3 min-w-[170px]">ĐƠN VỊ CHỦ TRÌ</th>
                                 <th class="p-3 min-w-[150px]">NGƯỜI THỰC HIỆN</th>
                                 <th class="p-3 text-center min-w-[100px]">ƯU TIÊN</th>
@@ -115,12 +115,10 @@ export const TaskListComponent = {
             </div>
         `;
 
-        // 4. Mapper chuẩn hóa dữ liệu & Render Badges
+        // 4. Mapper chuẩn hóa dữ liệu & Render Badges + Màu sắc Tên Công việc
         const formatTaskData = (t) => {
-            // Lấy Tên Người thực hiện
             const rawAssignee = t.assigneeName || t.assignee || t.executor || 'Chưa phân công';
 
-            // Đơn vị chủ trì: Ưu tiên lấy từ Firebase -> Nếu không có thì tra theo Mã -> Nếu vẫn không có thì lấy theo Người thực hiện
             const rawDept = t.departmentName || t.department_name || t.deptName || t.department || t.department_id || t.dept_id || '';
             let finalDeptName = deptCodeMap[rawDept] || rawDept;
 
@@ -128,14 +126,23 @@ export const TaskListComponent = {
                 finalDeptName = assigneeDeptMap[rawAssignee] || 'Phòng Hành chính – Tài vụ';
             }
 
-            // Render Badge màu cho Đơn vị chủ trì
+            // Phối màu đồng bộ cho Đơn vị chủ trì và Tên công việc
             let deptBadge = '';
+            let titleColorClass = 'text-indigo-900 border-l-2 border-indigo-500 pl-2'; // Mặc định
+            let iconClass = 'fa-folder-open text-indigo-500';
+
             if (finalDeptName.includes('Ban Giám đốc')) {
                 deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200 whitespace-nowrap">Ban Giám đốc</span>`;
+                titleColorClass = 'text-purple-900 border-l-2 border-purple-500 pl-2';
+                iconClass = 'fa-shield-halved text-purple-600';
             } else if (finalDeptName.includes('Đào tạo') || finalDeptName.includes('ĐT-KH-QLSV')) {
                 deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">Phòng Đào tạo - KH & QLSV</span>`;
+                titleColorClass = 'text-emerald-900 border-l-2 border-emerald-500 pl-2';
+                iconClass = 'fa-graduation-cap text-emerald-600';
             } else {
                 deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 whitespace-nowrap">Phòng Hành chính – Tài vụ</span>`;
+                titleColorClass = 'text-blue-900 border-l-2 border-blue-500 pl-2';
+                iconClass = 'fa-briefcase text-blue-600';
             }
 
             // Hạn chót
@@ -151,7 +158,7 @@ export const TaskListComponent = {
                 }
             }
 
-            // Badge Mức độ Ưu tiên
+            // Badge Ưu tiên
             const rawPriority = String(t.priority || t.PRIORITY || '').toUpperCase();
             let priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Thường</span>';
             if (rawPriority === 'KHAN' || rawPriority === 'KHẨN') {
@@ -175,7 +182,7 @@ export const TaskListComponent = {
                 statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-block whitespace-nowrap">Hoàn thành</span>';
             }
 
-            // Thanh tiến độ ProgressBar
+            // Progress Bar
             const progressVal = Number(t.progress || 0);
             const progressBar = `
                 <div class="flex items-center gap-2 justify-center">
@@ -190,6 +197,8 @@ export const TaskListComponent = {
                 rawAssignee,
                 deptBadge,
                 finalDeptName,
+                titleColorClass,
+                iconClass,
                 formattedDeadline,
                 rawDeadline,
                 priorityBadge,
@@ -251,11 +260,16 @@ export const TaskListComponent = {
                 tbody.innerHTML = paginatedTasks.map((t, idx) => {
                     const info = formatTaskData(t);
                     return `
-                        <tr data-task-id="${t.id}" class="hover:bg-indigo-50/50 cursor-pointer transition duration-150 border-b border-slate-100">
+                        <tr data-task-id="${t.id}" class="hover:bg-slate-50 cursor-pointer transition duration-150 border-b border-slate-100">
                             <td class="p-3.5 text-center font-bold text-slate-400">${startIndex + idx + 1}</td>
                             <td class="p-3.5">
-                                <div class="font-bold text-slate-800 text-[13px] leading-snug line-clamp-1">${t.title || t.name || ''}</div>
-                                <div class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">${t.description || t.content || ''}</div>
+                                <div class="${info.titleColorClass} py-0.5">
+                                    <div class="font-bold text-[13px] leading-snug line-clamp-1 flex items-center gap-1.5">
+                                        <i class="fa-solid ${info.iconClass} text-[11px]"></i>
+                                        <span>${t.title || t.name || ''}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 line-clamp-1 mt-0.5 pl-4">${t.description || t.content || ''}</div>
+                                </div>
                             </td>
                             <td class="p-3.5">${info.deptBadge}</td>
                             <td class="p-3.5 text-slate-700 font-semibold">${info.rawAssignee}</td>
