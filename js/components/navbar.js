@@ -14,62 +14,59 @@ export const NavbarComponent = {
 
         if (!targetElement) return;
 
+        // Lấy chữ cái đầu tiên làm Avatar
+        const avatarLetter = currentUser?.fullName ? currentUser.fullName.trim().charAt(0).toUpperCase() : 'U';
+
         targetElement.innerHTML = `
-            <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-40">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex items-center justify-between h-16">
-                        
-                        <!-- Logo & Tiêu đề ứng dụng -->
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-indigo-700/80 border border-indigo-500/30 flex items-center justify-center shadow-inner">
-                                <i class="fa-solid fa-list-check text-xl text-indigo-200"></i>
-                            </div>
-                            <div>
-                                <h1 class="font-bold text-sm sm:text-base tracking-wide uppercase leading-tight text-white">
-                                    QUẢN LÝ CÔNG VIỆC UFM - PHÂN HIỆU QUẢNG NGÃI
-                                </h1>
-                                <p class="text-[11px] text-indigo-300 font-medium">Hệ thống theo dõi & Điều hành công việc</p>
-                            </div>
+            <header style="background-color: #1e1b4b; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 100%;">
+                <div style="max-width: 1280px; margin: 0 auto; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    
+                    <!-- Logo & Tiêu đề -->
+                    <div style="display: flex; items-center: center; gap: 0.75rem;">
+                        <div style="width: 40px; height: 40px; background-color: #3730a3; border: 1px solid #4338ca; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem; color: #a5b4fc;">
+                            📋
                         </div>
-
-                        <!-- Thông tin Người đăng nhập & Thao tác -->
-                        <div class="flex items-center gap-3">
-                            <!-- Khối hiển thị thông tin User -->
-                            <div class="hidden sm:flex items-center gap-2.5 bg-indigo-800/60 border border-indigo-700/80 px-3 py-1.5 rounded-xl">
-                                <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                                    ${currentUser?.fullName ? currentUser.fullName.charAt(0) : 'U'}
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-xs font-bold text-white leading-tight">
-                                        ${currentUser?.fullName || 'Chưa đăng nhập'}
-                                    </div>
-                                    <div class="text-[10px] text-indigo-200 font-medium">
-                                        ${currentUser?.position || 'Thành viên'}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Nút Đổi Mật Khẩu -->
-                            <button id="btn-change-pass" title="Đổi mật khẩu" 
-                                class="px-3 py-1.5 bg-indigo-800 hover:bg-indigo-700 text-indigo-100 rounded-lg text-xs font-medium transition border border-indigo-700 flex items-center gap-1.5 shadow-sm">
-                                <i class="fa-solid fa-key text-indigo-300"></i>
-                                <span class="hidden md:inline">Đổi mật khẩu</span>
-                            </button>
-
-                            <!-- Nút Đăng Xuất -->
-                            <button id="btn-logout" title="Đăng xuất" 
-                                class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition shadow-sm flex items-center gap-1.5">
-                                <i class="fa-solid fa-right-from-bracket"></i>
-                                <span class="hidden md:inline">Đăng xuất</span>
-                            </button>
+                        <div>
+                            <h1 style="font-weight: 700; font-size: 1rem; line-height: 1.2; text-transform: uppercase; margin: 0; color: #ffffff; letter-spacing: 0.5px;">
+                                QUẢN LÝ CÔNG VIỆC UFM - PHÂN HIỆU QUẢNG NGÃI
+                            </h1>
+                            <p style="font-size: 0.75rem; color: #a5b4fc; margin: 2px 0 0 0;">Hệ thống theo dõi & Điều hành công việc</p>
                         </div>
-
                     </div>
+
+                    <!-- Thông tin người dùng & Thao tác -->
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <!-- Block thông tin User -->
+                        <div style="display: flex; align-items: center; gap: 0.6rem; background-color: #312e81; border: 1px solid #3730a3; padding: 0.35rem 0.75rem; border-radius: 0.5rem;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; background-color: #4f46e5; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">
+                                ${avatarLetter}
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.8rem; font-weight: 700; color: #ffffff; line-height: 1.2;">
+                                    ${currentUser?.fullName || 'Người dùng'}
+                                </div>
+                                <div style="font-size: 0.7rem; color: #c7d2fe;">
+                                    ${currentUser?.position || 'Thành viên'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nút Đổi mật khẩu -->
+                        <button id="btn-change-pass" title="Đổi mật khẩu" style="background-color: #3730a3; color: #e0e7ff; border: 1px solid #4338ca; padding: 0.4rem 0.75rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.3rem;">
+                            🔑 <span>Đổi mật khẩu</span>
+                        </button>
+
+                        <!-- Nút Đăng xuất -->
+                        <button id="btn-logout" title="Đăng xuất" style="background-color: #e11d48; color: #ffffff; border: none; padding: 0.4rem 0.75rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.3rem;">
+                            🚪 <span>Đăng xuất</span>
+                        </button>
+                    </div>
+
                 </div>
             </header>
         `;
 
-        // Gán sự kiện cho các nút
+        // Gán sự kiện
         setTimeout(() => {
             const btnChangePass = document.getElementById('btn-change-pass');
             if (btnChangePass) {
