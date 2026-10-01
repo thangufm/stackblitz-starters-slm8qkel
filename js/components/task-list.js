@@ -8,8 +8,18 @@ export const TaskListComponent = {
     render(container, tasks = [], currentUser, onTaskClick, onTaskCreated) {
         if (!container) return;
 
-        // 1. Ánh xạ Mã phòng ban sang Tên hiển thị đầy đủ
-        const deptNames = {
+        // 1. Bản đồ tự động gắn Phòng Ban theo Người thực hiện (Fallback nếu Firebase chưa lưu phòng ban)
+        const assigneeDeptMap = {
+            'Lê Xuân Lâm': 'Ban Giám đốc',
+            'Bùi Thị Yến Linh': 'Ban Giám đốc',
+            'Tạ Thị Quỳnh Ngọc': 'Phòng Đào tạo - Khoa học và QLSV',
+            'Phạm Thị Thu Hảo': 'Phòng Đào tạo - Khoa học và QLSV',
+            'Phạm Ngọc Thắng': 'Phòng Hành chính – Tài vụ',
+            'Huỳnh Thị Anh Tùng': 'Phòng Hành chính – Tài vụ',
+            'Bùi Trần Quyết Thắng': 'Phòng Hành chính – Tài vụ'
+        };
+
+        const deptCodeMap = {
             'BGD': 'Ban Giám đốc',
             'HCTV': 'Phòng Hành chính – Tài vụ',
             'ĐT-KH-QLSV': 'Phòng Đào tạo - Khoa học và QLSV',
@@ -44,9 +54,9 @@ export const TaskListComponent = {
                         <!-- Lọc Phòng Ban -->
                         <select id="filter-dept" class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl font-medium text-slate-700 outline-none shadow-sm cursor-pointer">
                             <option value="">-- Tất cả phòng ban --</option>
-                            <option value="BGD">Ban Giám đốc</option>
-                            <option value="HCTV">Phòng Hành chính – Tài vụ</option>
-                            <option value="ĐT-KH-QLSV">Phòng Đào tạo - Khoa học và QLSV</option>
+                            <option value="Ban Giám đốc">Ban Giám đốc</option>
+                            <option value="Phòng Hành chính – Tài vụ">Phòng Hành chính – Tài vụ</option>
+                            <option value="Phòng Đào tạo - Khoa học và QLSV">Phòng Đào tạo - Khoa học và QLSV</option>
                         </select>
 
                         <!-- Lọc Trạng Thái -->
@@ -105,99 +115,91 @@ export const TaskListComponent = {
             </div>
         `;
 
-        // 4. Mapper dữ liệu & Render Badges sắc nét
-        // Mapper dữ liệu Đơn vị chủ trì chuẩn xác 100%
-const formatTaskData = (t) => {
-    // 1. Danh sách ánh xạ các mã viết tắt (nếu CSDL dùng mã)
-    const deptMap = {
-        'BGD': 'Ban Giám đốc',
-        'HCTV': 'Phòng Hành chính – Tài vụ',
-        'ĐT-KH-QLSV': 'Phòng Đào tạo - Khoa học và QLSV',
-        'DAO_TAO': 'Phòng Đào tạo - Khoa học và QLSV',
-        'HANH_CHINH': 'Phòng Hành chính – Tài vụ'
-    };
+        // 4. Mapper chuẩn hóa dữ liệu & Render Badges
+        const formatTaskData = (t) => {
+            // Lấy Tên Người thực hiện
+            const rawAssignee = t.assigneeName || t.assignee || t.executor || 'Chưa phân công';
 
-    // 2. Quét tất cả các tên trường có thể chứa thông tin Phòng Ban trên Firebase
-    const rawDept = t.departmentName || t.department_name || t.deptName || t.department || t.department_id || t.dept_id || t.DEPARTMENT || '';
-    
-    // 3. Nếu giá trị trả về đã là Tên tiếng Việt chuẩn thì giữ nguyên, nếu là Mã viết tắt thì tra cứu qua deptMap
-    let finalDeptName = '';
-    if (deptMap[rawDept]) {
-        finalDeptName = deptMap[rawDept];
-    } else if (rawDept && rawDept !== 'Chưa phân công') {
-        finalDeptName = rawDept;
-    }
+            // Đơn vị chủ trì: Ưu tiên lấy từ Firebase -> Nếu không có thì tra theo Mã -> Nếu vẫn không có thì lấy theo Người thực hiện
+            const rawDept = t.departmentName || t.department_name || t.deptName || t.department || t.department_id || t.dept_id || '';
+            let finalDeptName = deptCodeMap[rawDept] || rawDept;
 
-    // 4. Render Badge màu sắc cho Đơn vị chủ trì
-    let deptBadge = '';
-    if (finalDeptName.includes('Ban Giám đốc')) {
-        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200 whitespace-nowrap">${finalDeptName}</span>`;
-    } else if (finalDeptName.includes('Đào tạo') || finalDeptName.includes('ĐT-KH-QLSV')) {
-        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">${finalDeptName}</span>`;
-    } else if (finalDeptName.includes('Hành chính') || finalDeptName.includes('HCTV')) {
-        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 whitespace-nowrap">${finalDeptName}</span>`;
-    } else if (finalDeptName) {
-        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">${finalDeptName}</span>`;
-    } else {
-        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-500 whitespace-nowrap">Chưa phân công</span>`;
-    }
+            if (!finalDeptName || finalDeptName === 'Chưa phân công') {
+                finalDeptName = assigneeDeptMap[rawAssignee] || 'Phòng Hành chính – Tài vụ';
+            }
 
-    // --- Giữ nguyên các phần Hạn chót, Ưu tiên, Trạng thái, Tiến độ ---
-    let rawDeadline = t.deadline || t.DEADLINE || t.due_date || t.dueDate || t.deadline_date || t.finish_date || '';
-    let formattedDeadline = '---';
-    if (rawDeadline) {
-        if (rawDeadline.includes('-')) {
-            const p = rawDeadline.split('T')[0].split('-');
-            if (p.length === 3) formattedDeadline = `${p[2]}/${p[1]}/${p[0]}`;
-        } else if (rawDeadline.includes('/')) {
-            formattedDeadline = rawDeadline;
-        }
-    }
+            // Render Badge màu cho Đơn vị chủ trì
+            let deptBadge = '';
+            if (finalDeptName.includes('Ban Giám đốc')) {
+                deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200 whitespace-nowrap">Ban Giám đốc</span>`;
+            } else if (finalDeptName.includes('Đào tạo') || finalDeptName.includes('ĐT-KH-QLSV')) {
+                deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">Phòng Đào tạo - KH & QLSV</span>`;
+            } else {
+                deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 whitespace-nowrap">Phòng Hành chính – Tài vụ</span>`;
+            }
 
-    const rawPriority = String(t.priority || t.PRIORITY || '').toUpperCase();
-    let priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Thường</span>';
-    if (rawPriority === 'KHAN' || rawPriority === 'KHẨN') {
-        priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-rose-50 text-rose-600 border border-rose-200/80 inline-block whitespace-nowrap shadow-sm">Khẩn</span>';
-    } else if (rawPriority === 'CAO') {
-        priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-50 text-amber-600 border border-amber-200/80 inline-block whitespace-nowrap shadow-sm">Cao</span>';
-    } else if (rawPriority === 'TRUNGBINH' || rawPriority === 'TRUNG BÌNH') {
-        priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-blue-50 text-blue-600 border border-blue-200/80 inline-block whitespace-nowrap shadow-sm">Trung bình</span>';
-    }
+            // Hạn chót
+            let rawDeadline = t.deadline || t.DEADLINE || t.due_date || t.dueDate || t.deadline_date || t.finish_date || '';
+            let formattedDeadline = '---';
 
-    const rawStatus = String(t.status || t.STATUS || '').toUpperCase();
-    let statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
-    if (rawStatus === 'CHO_XU_LY' || rawStatus === 'CHỜ XỬ LÝ') {
-        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-700 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
-    } else if (rawStatus === 'DANG_THUC_HIEN' || rawStatus === 'ĐANG THỰC HIỆN') {
-        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200/80 inline-block whitespace-nowrap">Đang thực hiện</span>';
-    } else if (rawStatus === 'CHO_DUYET' || rawStatus === 'CHỜ DUYỆT') {
-        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 inline-block whitespace-nowrap">Chờ duyệt</span>';
-    } else if (rawStatus === 'HOAN_THANH' || rawStatus === 'HOÀN THÀNH') {
-        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-block whitespace-nowrap">Hoàn thành</span>';
-    }
+            if (rawDeadline) {
+                if (rawDeadline.includes('-')) {
+                    const p = rawDeadline.split('T')[0].split('-');
+                    if (p.length === 3) formattedDeadline = `${p[2]}/${p[1]}/${p[0]}`;
+                } else if (rawDeadline.includes('/')) {
+                    formattedDeadline = rawDeadline;
+                }
+            }
 
-    const progressVal = Number(t.progress || 0);
-    const progressBar = `
-        <div class="flex items-center gap-2 justify-center">
-            <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
-                <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${progressVal}%"></div>
-            </div>
-            <span class="font-bold text-indigo-600 text-[11px] min-w-[28px] text-right">${progressVal}%</span>
-        </div>
-    `;
+            // Badge Mức độ Ưu tiên
+            const rawPriority = String(t.priority || t.PRIORITY || '').toUpperCase();
+            let priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Thường</span>';
+            if (rawPriority === 'KHAN' || rawPriority === 'KHẨN') {
+                priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-rose-50 text-rose-600 border border-rose-200/80 inline-block whitespace-nowrap shadow-sm">Khẩn</span>';
+            } else if (rawPriority === 'CAO') {
+                priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-50 text-amber-600 border border-amber-200/80 inline-block whitespace-nowrap shadow-sm">Cao</span>';
+            } else if (rawPriority === 'TRUNGBINH' || rawPriority === 'TRUNG BÌNH') {
+                priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-blue-50 text-blue-600 border border-blue-200/80 inline-block whitespace-nowrap shadow-sm">Trung bình</span>';
+            }
 
-    return {
-        deptBadge,
-        formattedDeadline,
-        rawDeadline,
-        priorityBadge,
-        statusBadge,
-        progressBar,
-        deptKey: rawDept,
-        rawStatus
-    };
-};
-        // 5. Hàm lọc & Render
+            // Badge Trạng thái
+            const rawStatus = String(t.status || t.STATUS || '').toUpperCase();
+            let statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
+            if (rawStatus === 'CHO_XU_LY' || rawStatus === 'CHỜ XỬ LÝ') {
+                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-700 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
+            } else if (rawStatus === 'DANG_THUC_HIEN' || rawStatus === 'ĐANG THỰC HIỆN') {
+                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200/80 inline-block whitespace-nowrap">Đang thực hiện</span>';
+            } else if (rawStatus === 'CHO_DUYET' || rawStatus === 'CHỜ DUYỆT') {
+                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 inline-block whitespace-nowrap">Chờ duyệt</span>';
+            } else if (rawStatus === 'HOAN_THANH' || rawStatus === 'HOÀN THÀNH') {
+                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-block whitespace-nowrap">Hoàn thành</span>';
+            }
+
+            // Thanh tiến độ ProgressBar
+            const progressVal = Number(t.progress || 0);
+            const progressBar = `
+                <div class="flex items-center gap-2 justify-center">
+                    <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
+                        <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${progressVal}%"></div>
+                    </div>
+                    <span class="font-bold text-indigo-600 text-[11px] min-w-[28px] text-right">${progressVal}%</span>
+                </div>
+            `;
+
+            return {
+                rawAssignee,
+                deptBadge,
+                finalDeptName,
+                formattedDeadline,
+                rawDeadline,
+                priorityBadge,
+                statusBadge,
+                progressBar,
+                rawStatus
+            };
+        };
+
+        // 5. Hàm lọc & Phân trang
         const applyFiltersAndRender = () => {
             const fromDate = document.getElementById('filter-from-date')?.value;
             const toDate = document.getElementById('filter-to-date')?.value;
@@ -219,7 +221,7 @@ const formatTaskData = (t) => {
 
                 if (fromDate && taskDate && taskDate < fromDate) return false;
                 if (toDate && taskDate && taskDate > toDate) return false;
-                if (dept && info.deptKey !== dept) return false;
+                if (dept && !info.finalDeptName.includes(dept)) return false;
                 if (status && info.rawStatus !== status && task.status !== status) return false;
 
                 return true;
@@ -256,7 +258,7 @@ const formatTaskData = (t) => {
                                 <div class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">${t.description || t.content || ''}</div>
                             </td>
                             <td class="p-3.5">${info.deptBadge}</td>
-                            <td class="p-3.5 text-slate-700 font-semibold">${t.assigneeName || t.assignee || 'Phạm Ngọc Thắng'}</td>
+                            <td class="p-3.5 text-slate-700 font-semibold">${info.rawAssignee}</td>
                             <td class="p-3.5 text-center">${info.priorityBadge}</td>
                             <td class="p-3.5 text-center">${info.statusBadge}</td>
                             <td class="p-3.5 text-center">${info.progressBar}</td>
