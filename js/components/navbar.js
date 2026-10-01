@@ -2,12 +2,18 @@ import { ChangePassModalComponent } from './change-pass-modal.js';
 
 export const NavbarComponent = {
     render(container, currentUser, onLogout) {
+        // Kiểm tra nếu container null thì dừng, tránh crash ứng dụng
+        if (!container) {
+            console.warn("Không tìm thấy thẻ chứa Navbar!");
+            return;
+        }
+
         container.innerHTML = `
             <nav class="bg-indigo-900 text-white shadow-md">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-between h-16">
                         
-                        <!-- Tiêu đề phần mềm mới (Yêu cầu 5) -->
+                        <!-- Tiêu đề phần mềm -->
                         <div class="flex items-center gap-3">
                             <i class="fa-solid fa-list-check text-2xl text-indigo-300"></i>
                             <div>
@@ -24,7 +30,7 @@ export const NavbarComponent = {
                                 <div class="text-[11px] text-indigo-200">${currentUser?.position || ''}</div>
                             </div>
 
-                            <!-- Nút Đổi Mật Khẩu (Yêu cầu 4) -->
+                            <!-- Nút Đổi Mật Khẩu -->
                             <button id="btn-change-pass" title="Đổi mật khẩu" class="px-2.5 py-1.5 bg-indigo-800 hover:bg-indigo-700 text-indigo-100 rounded-lg text-xs font-medium transition border border-indigo-700 flex items-center gap-1">
                                 <i class="fa-solid fa-key"></i>
                                 <span class="hidden md:inline">Đổi mật khẩu</span>
