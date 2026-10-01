@@ -1,7 +1,7 @@
 import { DeptService } from './services/dept-service.js';
 import { NavbarComponent } from './components/navbar.js';
 import { TaskListComponent } from './components/task-list.js';
-import { AAuthViewComponent } from './components/auth-view.js'; // Chuẩn xác tệp auth-view.js trong dự án
+import { AuthViewComponent } from './components/auth-view.js'; // Chuẩn xác tệp auth-view.js trong dự án
 import { db, ref, get } from './config/firebase-config.js';
 
 class App {
