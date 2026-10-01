@@ -108,20 +108,42 @@ export const TaskListComponent = {
         // 4. Hàm hỗ trợ Mapper dữ liệu linh hoạt (Xử lý các key dữ liệu khác nhau)
         const formatTaskData = (t) => {
             // Đơn vị chủ trì
-            const deptKey = t.department || t.department_id || t.dept_id || '';
+            const deptKey = t.department || t.department_id || t.dept_id || t.DEPARTMENT || '';
             const deptName = deptNames[deptKey] || t.departmentName || deptKey || 'Chưa phân công';
-
-            // Hạn chót
-            let rawDeadline = t.deadline || t.due_date || t.deadline_date || '';
-            let formattedDeadline = rawDeadline;
-            if (rawDeadline.includes('-')) {
-                const p = rawDeadline.split('-');
-                if (p.length === 3) formattedDeadline = `${p[2]}/${p[1]}/${p[0]}`; // YYYY-MM-DD -> DD/MM/YYYY
+        
+            // 1. QUÉT TẤT CẢ CÁC TÊN TRƯỜNG CÓ THỂ CHỨA HẠN CHÓT TRÊN FIREBASE
+            let rawDeadline = t.deadline || t.DEADLINE || t.due_date || t.dueDate || t.deadline_date || t.finish_date || t.dueDateStr || '';
+        
+            let formattedDeadline = '---';
+        
+            if (rawDeadline) {
+                // Trường hợp 1: Dạng YYYY-MM-DD (VD: 2026-10-15) -> Chuyển thành 15/10/2026
+                if (rawDeadline.includes('-')) {
+                    const p = rawDeadline.split('T')[0].split('-');
+                    if (p.length === 3) {
+                        formattedDeadline = `${p[2]}/${p[1]}/${p[0]}`;
+                    } else {
+                        formattedDeadline = rawDeadline;
+                    }
+                } 
+                // Trường hợp 2: Đã là dạng DD/MM/YYYY chuẩn sẵn
+                else if (rawDeadline.includes('/')) {
+                    formattedDeadline = rawDeadline;
+                } 
+                // Trường hợp 3: Dạng số Timestamp
+                else if (!isNaN(rawDeadline)) {
+                    const d = new Date(Number(rawDeadline));
+                    if (!isNaN(d.getTime())) {
+                        formattedDeadline = d.toLocaleDateString('vi-VN');
+                    }
+                } else {
+                    formattedDeadline = rawDeadline;
+                }
             }
-
+        
             // Mức độ ưu tiên + Badges màu
-            const rawPriority = (t.priority || '').toUpperCase();
-            let priorityBadge = '<span class="px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-600">Thường</span>';
+            const rawPriority = String(t.priority || t.PRIORITY || '').toUpperCase();
+            let priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600">Thường</span>';
             if (rawPriority === 'KHAN' || rawPriority === 'KHẨN') {
                 priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-rose-100 text-rose-700 border border-rose-200">Khẩn</span>';
             } else if (rawPriority === 'CAO') {
@@ -129,9 +151,9 @@ export const TaskListComponent = {
             } else if (rawPriority === 'TRUNGBINH' || rawPriority === 'TRUNG BÌNH') {
                 priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-blue-100 text-blue-700 border border-blue-200">Trung bình</span>';
             }
-
+        
             // Trạng thái + Badges màu
-            const rawStatus = (t.status || '').toUpperCase();
+            const rawStatus = String(t.status || t.STATUS || '').toUpperCase();
             let statusBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600">Chờ xử lý</span>';
             if (rawStatus === 'CHO_XU_LY' || rawStatus === 'CHỜ XỬ LÝ') {
                 statusBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-700 border border-slate-200">Chờ xử lý</span>';
@@ -142,7 +164,7 @@ export const TaskListComponent = {
             } else if (rawStatus === 'HOAN_THANH' || rawStatus === 'HOÀN THÀNH') {
                 statusBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-emerald-100 text-emerald-700 border border-emerald-200">Hoàn thành</span>';
             }
-
+        
             return {
                 deptName,
                 formattedDeadline,
