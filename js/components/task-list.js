@@ -106,76 +106,97 @@ export const TaskListComponent = {
         `;
 
         // 4. Mapper dữ liệu & Render Badges sắc nét
-        const formatTaskData = (t) => {
-            // Đơn vị chủ trì
-            const deptKey = t.department || t.department_id || t.dept_id || t.DEPARTMENT || '';
-            const rawDeptName = deptNames[deptKey] || t.departmentName || deptKey;
-            
-            let deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">${rawDeptName}</span>`;
-            if (!rawDeptName || rawDeptName === 'Chưa phân công') {
-                deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-500 whitespace-nowrap">Chưa phân công</span>`;
-            }
+        // Mapper dữ liệu Đơn vị chủ trì chuẩn xác 100%
+const formatTaskData = (t) => {
+    // 1. Danh sách ánh xạ các mã viết tắt (nếu CSDL dùng mã)
+    const deptMap = {
+        'BGD': 'Ban Giám đốc',
+        'HCTV': 'Phòng Hành chính – Tài vụ',
+        'ĐT-KH-QLSV': 'Phòng Đào tạo - Khoa học và QLSV',
+        'DAO_TAO': 'Phòng Đào tạo - Khoa học và QLSV',
+        'HANH_CHINH': 'Phòng Hành chính – Tài vụ'
+    };
 
-            // Hạn chót
-            let rawDeadline = t.deadline || t.DEADLINE || t.due_date || t.dueDate || t.deadline_date || t.finish_date || '';
-            let formattedDeadline = '---';
+    // 2. Quét tất cả các tên trường có thể chứa thông tin Phòng Ban trên Firebase
+    const rawDept = t.departmentName || t.department_name || t.deptName || t.department || t.department_id || t.dept_id || t.DEPARTMENT || '';
+    
+    // 3. Nếu giá trị trả về đã là Tên tiếng Việt chuẩn thì giữ nguyên, nếu là Mã viết tắt thì tra cứu qua deptMap
+    let finalDeptName = '';
+    if (deptMap[rawDept]) {
+        finalDeptName = deptMap[rawDept];
+    } else if (rawDept && rawDept !== 'Chưa phân công') {
+        finalDeptName = rawDept;
+    }
 
-            if (rawDeadline) {
-                if (rawDeadline.includes('-')) {
-                    const p = rawDeadline.split('T')[0].split('-');
-                    if (p.length === 3) formattedDeadline = `${p[2]}/${p[1]}/${p[0]}`;
-                } else if (rawDeadline.includes('/')) {
-                    formattedDeadline = rawDeadline;
-                }
-            }
+    // 4. Render Badge màu sắc cho Đơn vị chủ trì
+    let deptBadge = '';
+    if (finalDeptName.includes('Ban Giám đốc')) {
+        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200 whitespace-nowrap">${finalDeptName}</span>`;
+    } else if (finalDeptName.includes('Đào tạo') || finalDeptName.includes('ĐT-KH-QLSV')) {
+        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">${finalDeptName}</span>`;
+    } else if (finalDeptName.includes('Hành chính') || finalDeptName.includes('HCTV')) {
+        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 whitespace-nowrap">${finalDeptName}</span>`;
+    } else if (finalDeptName) {
+        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">${finalDeptName}</span>`;
+    } else {
+        deptBadge = `<span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-500 whitespace-nowrap">Chưa phân công</span>`;
+    }
 
-            // Badge Mức độ Ưu tiên (Chống nhảy dòng: whitespace-nowrap)
-            const rawPriority = String(t.priority || t.PRIORITY || '').toUpperCase();
-            let priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Thường</span>';
-            if (rawPriority === 'KHAN' || rawPriority === 'KHẨN') {
-                priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-rose-50 text-rose-600 border border-rose-200/80 inline-block whitespace-nowrap shadow-sm">Khẩn</span>';
-            } else if (rawPriority === 'CAO') {
-                priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-50 text-amber-600 border border-amber-200/80 inline-block whitespace-nowrap shadow-sm">Cao</span>';
-            } else if (rawPriority === 'TRUNGBINH' || rawPriority === 'TRUNG BÌNH') {
-                priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-blue-50 text-blue-600 border border-blue-200/80 inline-block whitespace-nowrap shadow-sm">Trung bình</span>';
-            }
+    // --- Giữ nguyên các phần Hạn chót, Ưu tiên, Trạng thái, Tiến độ ---
+    let rawDeadline = t.deadline || t.DEADLINE || t.due_date || t.dueDate || t.deadline_date || t.finish_date || '';
+    let formattedDeadline = '---';
+    if (rawDeadline) {
+        if (rawDeadline.includes('-')) {
+            const p = rawDeadline.split('T')[0].split('-');
+            if (p.length === 3) formattedDeadline = `${p[2]}/${p[1]}/${p[0]}`;
+        } else if (rawDeadline.includes('/')) {
+            formattedDeadline = rawDeadline;
+        }
+    }
 
-            // Badge Trạng thái
-            const rawStatus = String(t.status || t.STATUS || '').toUpperCase();
-            let statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
-            if (rawStatus === 'CHO_XU_LY' || rawStatus === 'CHỜ XỬ LÝ') {
-                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-700 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
-            } else if (rawStatus === 'DANG_THUC_HIEN' || rawStatus === 'ĐANG THỰC HIỆN') {
-                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200/80 inline-block whitespace-nowrap">Đang thực hiện</span>';
-            } else if (rawStatus === 'CHO_DUYET' || rawStatus === 'CHỜ DUYỆT') {
-                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 inline-block whitespace-nowrap">Chờ duyệt</span>';
-            } else if (rawStatus === 'HOAN_THANH' || rawStatus === 'HOÀN THÀNH') {
-                statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-block whitespace-nowrap">Hoàn thành</span>';
-            }
+    const rawPriority = String(t.priority || t.PRIORITY || '').toUpperCase();
+    let priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Thường</span>';
+    if (rawPriority === 'KHAN' || rawPriority === 'KHẨN') {
+        priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-rose-50 text-rose-600 border border-rose-200/80 inline-block whitespace-nowrap shadow-sm">Khẩn</span>';
+    } else if (rawPriority === 'CAO') {
+        priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-50 text-amber-600 border border-amber-200/80 inline-block whitespace-nowrap shadow-sm">Cao</span>';
+    } else if (rawPriority === 'TRUNGBINH' || rawPriority === 'TRUNG BÌNH') {
+        priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-blue-50 text-blue-600 border border-blue-200/80 inline-block whitespace-nowrap shadow-sm">Trung bình</span>';
+    }
 
-            // Thanh tiến độ ProgressBar nhỏ xinh
-            const progressVal = Number(t.progress || 0);
-            const progressBar = `
-                <div class="flex items-center gap-2 justify-center">
-                    <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
-                        <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${progressVal}%"></div>
-                    </div>
-                    <span class="font-bold text-indigo-600 text-[11px] min-w-[28px] text-right">${progressVal}%</span>
-                </div>
-            `;
+    const rawStatus = String(t.status || t.STATUS || '').toUpperCase();
+    let statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
+    if (rawStatus === 'CHO_XU_LY' || rawStatus === 'CHỜ XỬ LÝ') {
+        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-700 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
+    } else if (rawStatus === 'DANG_THUC_HIEN' || rawStatus === 'ĐANG THỰC HIỆN') {
+        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200/80 inline-block whitespace-nowrap">Đang thực hiện</span>';
+    } else if (rawStatus === 'CHO_DUYET' || rawStatus === 'CHỜ DUYỆT') {
+        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 inline-block whitespace-nowrap">Chờ duyệt</span>';
+    } else if (rawStatus === 'HOAN_THANH' || rawStatus === 'HOÀN THÀNH') {
+        statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-block whitespace-nowrap">Hoàn thành</span>';
+    }
 
-            return {
-                deptBadge,
-                formattedDeadline,
-                rawDeadline,
-                priorityBadge,
-                statusBadge,
-                progressBar,
-                deptKey,
-                rawStatus
-            };
-        };
+    const progressVal = Number(t.progress || 0);
+    const progressBar = `
+        <div class="flex items-center gap-2 justify-center">
+            <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
+                <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${progressVal}%"></div>
+            </div>
+            <span class="font-bold text-indigo-600 text-[11px] min-w-[28px] text-right">${progressVal}%</span>
+        </div>
+    `;
 
+    return {
+        deptBadge,
+        formattedDeadline,
+        rawDeadline,
+        priorityBadge,
+        statusBadge,
+        progressBar,
+        deptKey: rawDept,
+        rawStatus
+    };
+};
         // 5. Hàm lọc & Render
         const applyFiltersAndRender = () => {
             const fromDate = document.getElementById('filter-from-date')?.value;
