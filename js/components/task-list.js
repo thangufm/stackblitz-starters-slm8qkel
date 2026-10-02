@@ -555,40 +555,58 @@ const reindexRows = () => {
         btnCancelReg?.addEventListener('click', () => toggleRegModal(false));
 
         // Submit form đăng ký
-        regForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const commonStart = document.getElementById('reg-common-start')?.value;
-            const commonEnd = document.getElementById('reg-common-end')?.value;
+        // Import hàm push & ref từ Firebase nếu ở đầu file chưa import (hoặc dùng hàm callback gửi ra ngoài)
+// Submit form đăng ký công việc
+regForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const commonStart = document.getElementById('reg-common-start')?.value;
+    const commonEnd = document.getElementById('reg-common-end')?.value;
 
-            const rows = rowsContainer.querySelectorAll('.task-row');
-            const createdTasks = [];
+    const rows = rowsContainer.querySelectorAll('.task-row');
+    const createdTasks = [];
 
-            rows.forEach(row => {
-                const title = row.querySelector('.reg-row-title')?.value?.trim();
+    rows.forEach(row => {
+        const title = row.querySelector('.reg-row-title')?.value?.trim();
 
-                if (title) {
-                    createdTasks.push({
-                        title: title,
-                        description: `Đăng ký công việc tuần (${commonStart || '---'} đến ${commonEnd || '---'})`,
-                        start_date: commonStart,
-                        deadline: commonEnd,
-                        assigneeName: currentUser?.fullName || currentUser?.name || 'Nhân viên đăng ký',
-                        departmentName: currentUser?.departmentName || 'Phòng Hành chính – Tài vụ',
-                        status: 'CHO_DUYET',
-                        priority: 'TRUNGBINH',
-                        progress: 0,
-                        created_at: new Date().toISOString()
-                    });
-                }
+        if (title) {
+            // Chuẩn hóa đối tượng công việc khớp 100% với cấu trúc CSDL Firebase
+            createdTasks.push({
+                title: title,
+                name: title, // Dự phòng nếu hiển thị đọc field name
+                description: `Đăng ký công việc tuần (${commonStart || '---'} đến ${commonEnd || '---'})`,
+                start_date: commonStart,
+                deadline: commonEnd, // Hạn chót chính
+                due_date: commonEnd,  // Khóa dự phòng cho bộ lọc
+                assigneeName: currentUser?.fullName || currentUser?.name || 'Phạm Ngọc Thắng',
+                assignee: currentUser?.fullName || currentUser?.name || 'Phạm Ngọc Thắng',
+                departmentName: currentUser?.departmentName || 'Phòng Hành chính – Tài vụ',
+                department: currentUser?.department || 'HCTV',
+                status: 'CHO_DUYET',   // Trạng thái chờ duyệt
+                priority: 'TRUNGBINH',
+                progress: 0,
+                created_at: new Date().toISOString()
             });
+        }
+    });
 
-            if (createdTasks.length > 0 && typeof onTaskCreated === 'function') {
-                createdTasks.forEach(task => onTaskCreated(task));
+    if (createdTasks.length > 0) {
+        // Gọi callback truyền ra main.js để ghi vào Firebase Realtime Database
+        if (typeof onTaskCreated === 'function') {
+            for (const task of createdTasks) {
+                await onTaskCreated(task);
             }
+        }
+        
+        // Reset bộ lọc Phòng ban & Ngày về "Tất cả" để hiển thị ngay công việc vừa đăng ký
+        const deptFilter = document.getElementById('filter-dept');
+        if (deptFilter) deptFilter.value = ''; 
+        
+        const resetBtn = document.getElementById('btn-reset-filter');
+        if (resetBtn) resetBtn.click();
+    }
 
-            toggleRegModal(false);
-        });
-
+    toggleRegModal(false);
+});
         applyFiltersAndRender();
     }
 };
