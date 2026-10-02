@@ -51,9 +51,10 @@ export const TaskListComponent = {
                             <input type="date" id="filter-to-date" class="bg-transparent font-semibold text-slate-700 outline-none cursor-pointer">
                         </div>
 
-                        <!-- Lọc Phòng Ban -->
+                        <!-- Lọc Phòng Ban / Công việc của tôi -->
                         <select id="filter-dept" class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl font-medium text-slate-700 outline-none shadow-sm cursor-pointer">
                             <option value="">-- Tất cả phòng ban --</option>
+                            <option value="MY_TASKS" class="font-bold text-indigo-600">📌 Công việc của tôi</option>
                             <option value="Ban Giám đốc">Ban Giám đốc</option>
                             <option value="Phòng Hành chính – Tài vụ">Phòng Hành chính – Tài vụ</option>
                             <option value="Phòng Đào tạo - Khoa học và QLSV">Phòng Đào tạo - Khoa học và QLSV</option>
@@ -75,12 +76,19 @@ export const TaskListComponent = {
                         </button>
                     </div>
 
-                    <!-- Số lượng & Nút Giao việc mới -->
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs text-slate-500 font-medium">Tổng số: <b id="task-count-text" class="text-indigo-600 text-sm">0</b> công việc</span>
+                    <!-- Số lượng & Nút thao tác -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500 font-medium mr-1">Tổng số: <b id="task-count-text" class="text-indigo-600 text-sm">0</b> công việc</span>
+                        
+                        <!-- Nút Đăng ký công việc cho Nhân viên -->
+                        <button id="btn-open-register-task" 
+                            class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-100">
+                            <i class="fa-solid fa-pen-to-square"></i> Đăng ký công việc
+                        </button>
+
                         ${currentUser?.department === 'BGD' ? `
                             <button id="btn-open-create-task" 
-                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-100">
+                                class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-100">
                                 <i class="fa-solid fa-plus"></i> Giao việc mới
                             </button>
                         ` : ''}
@@ -113,12 +121,61 @@ export const TaskListComponent = {
                 </div>
 
             </div>
+
+            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC (Dành cho Nhân viên) -->
+            <div id="register-task-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-lg p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+                    <div class="flex items-center justify-between border-b pb-3 border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-pen-to-square text-emerald-600"></i> Đăng ký công việc cá nhân
+                        </h3>
+                        <button id="btn-close-register-modal" class="text-slate-400 hover:text-slate-600 text-lg">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <form id="register-task-form" class="space-y-3.5 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Nội dung công việc <span class="text-rose-500">*</span></label>
+                            <input type="text" id="reg-title" required placeholder="Nhập tên / nội dung công việc..." 
+                                class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-medium text-slate-800">
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Mô tả chi tiết công việc</label>
+                            <textarea id="reg-description" rows="3" placeholder="Mô tả cụ thể nhiệm vụ cần đăng ký..." 
+                                class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-medium text-slate-800"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Từ ngày</label>
+                                <input type="date" id="reg-start-date" required
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-medium text-slate-700">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Đến ngày (Hạn chót) <span class="text-rose-500">*</span></label>
+                                <input type="date" id="reg-deadline" required
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-medium text-slate-700">
+                            </div>
+                        </div>
+
+                        <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                            <button type="button" id="btn-cancel-register" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition">
+                                Hủy bỏ
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md shadow-emerald-100">
+                                Gửi đăng ký
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         `;
 
-        // 4. Mapper chuẩn hóa dữ liệu & Render Badges + Màu sắc Tên Công việc
+        // 4. Mapper dữ liệu
         const formatTaskData = (t) => {
             const rawAssignee = t.assigneeName || t.assignee || t.executor || 'Chưa phân công';
-
             const rawDept = t.departmentName || t.department_name || t.deptName || t.department || t.department_id || t.dept_id || '';
             let finalDeptName = deptCodeMap[rawDept] || rawDept;
 
@@ -126,9 +183,8 @@ export const TaskListComponent = {
                 finalDeptName = assigneeDeptMap[rawAssignee] || 'Phòng Hành chính – Tài vụ';
             }
 
-            // Phối màu đồng bộ cho Đơn vị chủ trì và Tên công việc
             let deptBadge = '';
-            let titleColorClass = 'text-indigo-900 border-l-2 border-indigo-500 pl-2'; // Mặc định
+            let titleColorClass = 'text-indigo-900 border-l-2 border-indigo-500 pl-2';
             let iconClass = 'fa-folder-open text-indigo-500';
 
             if (finalDeptName.includes('Ban Giám đốc')) {
@@ -145,7 +201,6 @@ export const TaskListComponent = {
                 iconClass = 'fa-briefcase text-blue-600';
             }
 
-            // Hạn chót
             let rawDeadline = t.deadline || t.DEADLINE || t.due_date || t.dueDate || t.deadline_date || t.finish_date || '';
             let formattedDeadline = '---';
 
@@ -158,7 +213,6 @@ export const TaskListComponent = {
                 }
             }
 
-            // Badge Ưu tiên
             const rawPriority = String(t.priority || t.PRIORITY || '').toUpperCase();
             let priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Thường</span>';
             if (rawPriority === 'KHAN' || rawPriority === 'KHẨN') {
@@ -169,7 +223,6 @@ export const TaskListComponent = {
                 priorityBadge = '<span class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-blue-50 text-blue-600 border border-blue-200/80 inline-block whitespace-nowrap shadow-sm">Trung bình</span>';
             }
 
-            // Badge Trạng thái
             const rawStatus = String(t.status || t.STATUS || '').toUpperCase();
             let statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 inline-block whitespace-nowrap">Chờ xử lý</span>';
             if (rawStatus === 'CHO_XU_LY' || rawStatus === 'CHỜ XỬ LÝ') {
@@ -182,7 +235,6 @@ export const TaskListComponent = {
                 statusBadge = '<span class="px-2.5 py-1 rounded-lg font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-block whitespace-nowrap">Hoàn thành</span>';
             }
 
-            // Progress Bar
             const progressVal = Number(t.progress || 0);
             const progressBar = `
                 <div class="flex items-center gap-2 justify-center">
@@ -208,12 +260,14 @@ export const TaskListComponent = {
             };
         };
 
-        // 5. Hàm lọc & Phân trang
+        // 5. Lọc danh sách & Phân trang
         const applyFiltersAndRender = () => {
             const fromDate = document.getElementById('filter-from-date')?.value;
             const toDate = document.getElementById('filter-to-date')?.value;
             const dept = document.getElementById('filter-dept')?.value;
             const status = document.getElementById('filter-status')?.value;
+
+            const myName = currentUser?.fullName || currentUser?.name || currentUser?.displayName || '';
 
             const normalizeDate = (dStr) => {
                 if (!dStr) return '';
@@ -230,7 +284,17 @@ export const TaskListComponent = {
 
                 if (fromDate && taskDate && taskDate < fromDate) return false;
                 if (toDate && taskDate && taskDate > toDate) return false;
-                if (dept && !info.finalDeptName.includes(dept)) return false;
+
+                // Xử lý Lọc "Công việc của tôi" vs Phòng ban
+                if (dept === 'MY_TASKS') {
+                    if (!info.rawAssignee.toLowerCase().includes(myName.toLowerCase()) && 
+                        !task.assignee?.toLowerCase().includes(myName.toLowerCase())) {
+                        return false;
+                    }
+                } else if (dept && !info.finalDeptName.includes(dept)) {
+                    return false;
+                }
+
                 if (status && info.rawStatus !== status && task.status !== status) return false;
 
                 return true;
@@ -252,7 +316,7 @@ export const TaskListComponent = {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="p-8 text-center text-slate-400 font-medium">
-                            Không tìm thấy công việc nào phù hợp với bộ lọc.
+                            Không tìm thấy công việc nào phù hợp.
                         </td>
                     </tr>
                 `;
@@ -290,7 +354,7 @@ export const TaskListComponent = {
                 });
             }
 
-            // Render Phân trang
+            // Thanh phân trang
             const pagContainer = document.getElementById('pagination-container');
             if (pagContainer) {
                 if (filtered.length <= this.pageSize) {
@@ -327,7 +391,7 @@ export const TaskListComponent = {
             }
         };
 
-        // 6. Gán sự kiện Bộ lọc
+        // 6. Gán sự kiện
         ['filter-from-date', 'filter-to-date', 'filter-dept', 'filter-status'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -347,6 +411,52 @@ export const TaskListComponent = {
 
         document.getElementById('btn-open-create-task')?.addEventListener('click', () => {
             TaskFormModalComponent.render(currentUser, onTaskCreated);
+        });
+
+        // Xử lý Modal Đăng ký công việc
+        const regModal = document.getElementById('register-task-modal');
+        const btnOpenReg = document.getElementById('btn-open-register-task');
+        const btnCloseReg = document.getElementById('btn-close-register-modal');
+        const btnCancelReg = document.getElementById('btn-cancel-register');
+        const regForm = document.getElementById('register-task-form');
+
+        const toggleRegModal = (show) => {
+            if (regModal) {
+                if (show) regModal.classList.remove('hidden');
+                else regModal.classList.add('hidden');
+            }
+        };
+
+        btnOpenReg?.addEventListener('click', () => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const startDateEl = document.getElementById('reg-start-date');
+            if (startDateEl && !startDateEl.value) startDateEl.value = todayStr;
+            toggleRegModal(true);
+        });
+
+        btnCloseReg?.addEventListener('click', () => toggleRegModal(false));
+        btnCancelReg?.addEventListener('click', () => toggleRegModal(false));
+
+        regForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newTaskData = {
+                title: document.getElementById('reg-title').value,
+                description: document.getElementById('reg-description').value,
+                start_date: document.getElementById('reg-start-date').value,
+                deadline: document.getElementById('reg-deadline').value,
+                assigneeName: currentUser?.fullName || currentUser?.name || 'Nhân viên đăng ký',
+                departmentName: currentUser?.departmentName || 'Phòng Hành chính – Tài vụ',
+                status: 'CHO_DUYET',
+                priority: 'TRUNGBINH',
+                progress: 0,
+                created_at: new Date().toISOString()
+            };
+
+            if (typeof onTaskCreated === 'function') {
+                onTaskCreated(newTaskData);
+            }
+            regForm.reset();
+            toggleRegModal(false);
         });
 
         applyFiltersAndRender();
