@@ -41,6 +41,7 @@ class App {
             // 6. Render Danh sách công việc dạng Bảng Excel
             const mainContainer = document.getElementById('main-content');
 if (mainContainer) {
+    const self = this; // Giữ lại ngữ cảnh this để gọi init()
     TaskListComponent.render(
         mainContainer, 
         tasks, 
@@ -48,15 +49,20 @@ if (mainContainer) {
         null, 
         async (newTaskData) => {
             try {
-                // Đẩy dữ liệu công việc mới lên node 'tasks' trên Firebase Realtime Database
+                // Đẩy công việc mới lên Firebase
                 const tasksRef = ref(db, 'tasks');
                 await push(tasksRef, newTaskData);
-                
-                // Sau khi lưu thành công, tải lại danh sách để cập nhật giao diện ngay
-                this.init(); 
+                console.log("Đã lưu công việc thành công:", newTaskData);
+
+                // Reload lại danh sách dữ liệu
+                if (self && typeof self.init === 'function') {
+                    self.init();
+                } else if (typeof window.initApp === 'function') {
+                    window.initApp();
+                }
             } catch (error) {
-                console.error("Lỗi khi đăng ký công việc:", error);
-                alert("Đăng ký công việc thất bại, vui lòng thử lại!");
+                console.error("LỖI LƯU CÔNG VIỆC FIREBASE:", error);
+                alert("Đăng ký công việc thất bại: " + (error.message || error));
             }
         }
     );
