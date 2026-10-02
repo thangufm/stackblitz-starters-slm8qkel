@@ -2,7 +2,7 @@ import { DeptService } from './services/dept-service.js';
 import { NavbarComponent } from './components/navbar.js';
 import { TaskListComponent } from './components/task-list.js';
 import { AuthViewComponent } from './components/auth-view.js'; // Chuẩn xác tệp auth-view.js trong dự án
-import { db, ref, onValue, push } from './config/firebase-config.js';
+import { db, ref, onValue, push, get } from './config/firebase-config.js';
 
 class App {
     constructor() {
