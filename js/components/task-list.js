@@ -453,41 +453,47 @@ export const TaskListComponent = {
         };
 
         // Hàm tạo 1 dòng công việc có biểu tượng Xóa (🗑️)
-        const createRowHTML = (index) => {
-            return `
-                <div class="task-row flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
-                    <span class="row-stt w-6 text-center font-bold text-slate-400 text-xs shrink-0">${index}</span>
-                    
-                    <input type="text" class="reg-row-title flex-1 px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white" 
-                        placeholder="Nhập nội dung công việc thứ ${index}..." required>
+        // Hàm tạo 1 dòng công việc có biểu tượng Xóa (🗑️) rõ nét hơn
+const createRowHTML = (index) => {
+    return `
+        <div class="task-row flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
+            <span class="row-stt w-6 text-center font-bold text-slate-400 text-xs shrink-0">${index}</span>
+            
+            <input type="text" class="reg-row-title flex-1 px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white" 
+                placeholder="Nhập nội dung công việc thứ ${index}..." required>
 
-                    <button type="button" class="btn-remove-row text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition shrink-0" title="Xóa dòng này">
-                        <i class="fa-solid fa-trash-can text-sm"></i>
-                    </button>
-                </div>
-            `;
-        };
+            <!-- Nút xóa màu đỏ tươi, rõ nét -->
+            <button type="button" class="btn-remove-row text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 p-2 w-9 h-9 rounded-lg transition duration-150 flex items-center justify-center shrink-0 border border-rose-200/80 shadow-sm" title="Xóa dòng này">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+        </div>
+    `;
+};
 
         // Đánh lại STT các dòng
-        const reindexRows = () => {
-            if (!rowsContainer) return;
-            const rows = rowsContainer.querySelectorAll('.task-row');
-            rows.forEach((row, idx) => {
-                const sttEl = row.querySelector('.row-stt');
-                const inputEl = row.querySelector('.reg-row-title');
-                if (sttEl) sttEl.textContent = idx + 1;
-                if (inputEl && !inputEl.value) {
-                    inputEl.placeholder = `Nhập nội dung công việc thứ ${idx + 1}...`;
-                }
+        // Đánh lại STT các dòng & kiểm tra nút xóa
+const reindexRows = () => {
+    if (!rowsContainer) return;
+    const rows = rowsContainer.querySelectorAll('.task-row');
+    rows.forEach((row, idx) => {
+        const sttEl = row.querySelector('.row-stt');
+        const inputEl = row.querySelector('.reg-row-title');
+        if (sttEl) sttEl.textContent = idx + 1;
+        if (inputEl && !inputEl.value) {
+            inputEl.placeholder = `Nhập nội dung công việc thứ ${idx + 1}...`;
+        }
 
-                // Nút xóa ẩn khi chỉ còn 1 dòng
-                const btnRemove = row.querySelector('.btn-remove-row');
-                if (btnRemove) {
-                    if (rows.length === 1) btnRemove.classList.add('hidden');
-                    else btnRemove.classList.remove('hidden');
-                }
-            });
-        };
+        // Chỉ ẩn nút xóa khi bảng chỉ còn duy nhất 1 dòng
+        const btnRemove = row.querySelector('.btn-remove-row');
+        if (btnRemove) {
+            if (rows.length <= 1) {
+                btnRemove.classList.add('hidden');
+            } else {
+                btnRemove.classList.remove('hidden');
+            }
+        }
+    });
+};
 
         // Tính ngày Đầu tuần (Thứ 2) & Cuối tuần (Chủ nhật)
         const setWeekDateRange = () => {
