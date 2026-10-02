@@ -30,7 +30,7 @@ export const TaskListComponent = {
         // 2. Sắp xếp công việc mới nhất lên đầu
         const sortedTasks = [...tasks].sort((a, b) => {
             const timeA = a.created_at ? new Date(a.created_at).getTime() : (a.id || 0);
-            const timeB = b.created_at ? new Date(b.created_at).getTime() : (b.id || 0);
+            const timeB = b.created_at ? new Date(b.created_at).getTime() : (a.id || 0);
             return timeB - timeA;
         });
 
@@ -122,45 +122,62 @@ export const TaskListComponent = {
 
             </div>
 
-            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC NHIỀU DÒNG (Dành cho Nhân viên) -->
+            <!-- MODAL ĐĂNG KÝ CÔNG VIỆC THEO TUẦN -->
             <div id="register-task-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-4xl p-6 space-y-4 animate-in fade-in zoom-in duration-150 max-h-[90vh] flex flex-col">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-150 max-h-[90vh] flex flex-col">
                     
                     <!-- Header Modal -->
                     <div class="flex items-center justify-between border-b pb-3 border-slate-100 shrink-0">
                         <div>
                             <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                                <i class="fa-solid fa-pen-to-square text-emerald-600"></i> Đăng ký danh sách công việc
+                                <i class="fa-solid fa-calendar-check text-emerald-600"></i> Đăng ký công việc trong tuần
                             </h3>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Nhập thông tin công việc cần đăng ký (mỗi dòng tương ứng 1 công việc)</p>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Nhập danh sách công việc cần thực hiện trong khoảng thời gian đã chọn</p>
                         </div>
                         <button id="btn-close-register-modal" class="text-slate-400 hover:text-slate-600 text-lg p-1">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
 
-                    <!-- Form cuộn nội dung các dòng -->
-                    <form id="register-task-form" class="flex-1 overflow-y-auto pr-1 space-y-3">
+                    <!-- Form Đăng ký -->
+                    <form id="register-task-form" class="flex-1 overflow-y-auto space-y-4 pr-1">
                         
-                        <!-- Tiêu đề cột -->
-                        <div class="grid grid-cols-12 gap-2 text-[11px] font-bold text-slate-600 uppercase px-1">
-                            <div class="col-span-1 text-center">STT</div>
-                            <div class="col-span-5">Nội dung công việc <span class="text-rose-500">*</span></div>
-                            <div class="col-span-2.5">Từ ngày</div>
-                            <div class="col-span-2.5">Hạn chót <span class="text-rose-500">*</span></div>
-                            <div class="col-span-1 text-center">Xóa</div>
+                        <!-- CHỌN THỜI GIAN TUẦN NẰM BÊN TRÊN -->
+                        <div class="bg-emerald-50/60 border border-emerald-200/80 p-3.5 rounded-xl space-y-2">
+                            <label class="block font-bold text-emerald-900 text-xs flex items-center gap-1.5">
+                                <i class="fa-regular fa-clock text-emerald-600"></i> Thời gian thực hiện (Tuần) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <span class="text-[11px] font-semibold text-slate-500 mb-1 block">Từ ngày:</span>
+                                    <input type="date" id="reg-common-start" required 
+                                        class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-semibold text-slate-500 mb-1 block">Đến ngày (Hạn chót):</span>
+                                    <input type="date" id="reg-common-end" required 
+                                        class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Danh sách dòng công việc -->
-                        <div id="register-task-rows" class="space-y-2">
-                        </div>
+                        <!-- DANH SÁCH DÒNG CÔNG VIỆC -->
+                        <div class="space-y-2">
+                            <label class="block font-bold text-slate-700 text-xs flex items-center justify-between">
+                                <span>Danh sách nội dung công việc</span>
+                                <span class="text-[11px] text-slate-400 font-normal">Nhập 1 công việc trên mỗi dòng</span>
+                            </label>
 
-                        <!-- Nút Thêm dòng mới -->
-                        <div class="pt-2">
-                            <button type="button" id="btn-add-task-row" 
-                                class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-emerald-200/80">
-                                <i class="fa-solid fa-plus"></i> Thêm công việc mới
-                            </button>
+                            <div id="register-task-rows" class="space-y-2">
+                            </div>
+
+                            <!-- Nút Thêm dòng -->
+                            <div class="pt-1">
+                                <button type="button" id="btn-add-task-row" 
+                                    class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus text-emerald-600"></i> Thêm dòng công việc
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Footer Modal -->
@@ -168,8 +185,8 @@ export const TaskListComponent = {
                             <button type="button" id="btn-cancel-register" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">
                                 Hủy bỏ
                             </button>
-                            <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-emerald-100">
-                                Gửi đăng ký
+                            <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-emerald-100 flex items-center gap-1.5">
+                                <i class="fa-solid fa-paper-plane"></i> Gửi đăng ký
                             </button>
                         </div>
                     </form>
@@ -418,7 +435,7 @@ export const TaskListComponent = {
         });
 
         // ----------------------------------------------------
-        // 7. XỬ LÝ MODAL ĐĂNG KÝ CÔNG VIỆC DẠNG NHIỀU DÒNG
+        // 7. XỬ LÝ MODAL ĐĂNG KÝ CÔNG VIỆC DẠNG ĐƠN GIẢN
         // ----------------------------------------------------
         const regModal = document.getElementById('register-task-modal');
         const btnOpenReg = document.getElementById('btn-open-register-task');
@@ -435,32 +452,18 @@ export const TaskListComponent = {
             }
         };
 
-        // Hàm tạo HTML cho 1 dòng
-        const createRowHTML = (index, todayStr = '') => {
+        // Hàm tạo 1 dòng công việc có biểu tượng Xóa (🗑️)
+        const createRowHTML = (index) => {
             return `
-                <div class="task-row grid grid-cols-12 gap-2 items-center bg-slate-50/70 p-2 rounded-xl border border-slate-200/80">
-                    <div class="col-span-1 text-center font-bold text-slate-500 row-stt">${index}</div>
+                <div class="task-row flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
+                    <span class="row-stt w-6 text-center font-bold text-slate-400 text-xs shrink-0">${index}</span>
                     
-                    <div class="col-span-5">
-                        <input type="text" class="reg-row-title w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
-                            placeholder="Nhập nội dung công việc..." required>
-                    </div>
+                    <input type="text" class="reg-row-title flex-1 px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white" 
+                        placeholder="Nhập nội dung công việc thứ ${index}..." required>
 
-                    <div class="col-span-2.5">
-                        <input type="date" class="reg-row-start-date w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
-                            value="${todayStr}">
-                    </div>
-
-                    <div class="col-span-2.5">
-                        <input type="date" class="reg-row-deadline w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
-                            value="${todayStr}" required>
-                    </div>
-
-                    <div class="col-span-1 text-center">
-                        <button type="button" class="btn-remove-row text-rose-400 hover:text-rose-600 p-1 transition" title="Xóa dòng này">
-                            <i class="fa-solid fa-trash-can text-sm"></i>
-                        </button>
-                    </div>
+                    <button type="button" class="btn-remove-row text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition shrink-0" title="Xóa dòng này">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
                 </div>
             `;
         };
@@ -471,9 +474,13 @@ export const TaskListComponent = {
             const rows = rowsContainer.querySelectorAll('.task-row');
             rows.forEach((row, idx) => {
                 const sttEl = row.querySelector('.row-stt');
+                const inputEl = row.querySelector('.reg-row-title');
                 if (sttEl) sttEl.textContent = idx + 1;
+                if (inputEl && !inputEl.value) {
+                    inputEl.placeholder = `Nhập nội dung công việc thứ ${idx + 1}...`;
+                }
 
-                // Ẩn/Hiện nút xóa nếu chỉ còn 1 dòng
+                // Nút xóa ẩn khi chỉ còn 1 dòng
                 const btnRemove = row.querySelector('.btn-remove-row');
                 if (btnRemove) {
                     if (rows.length === 1) btnRemove.classList.add('hidden');
@@ -482,33 +489,51 @@ export const TaskListComponent = {
             });
         };
 
+        // Tính ngày Đầu tuần (Thứ 2) & Cuối tuần (Chủ nhật)
+        const setWeekDateRange = () => {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0: Chủ nhật, 1: Thứ 2
+            const distanceToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            
+            const monday = new Date(today);
+            monday.setDate(today.getDate() + distanceToMon);
+
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            const startEl = document.getElementById('reg-common-start');
+            const endEl = document.getElementById('reg-common-end');
+
+            if (startEl) startEl.value = monday.toISOString().split('T')[0];
+            if (endEl) endEl.value = sunday.toISOString().split('T')[0];
+        };
+
         // Khởi tạo ban đầu với 3 dòng
         const initRegisterRows = () => {
             if (!rowsContainer) return;
-            const todayStr = new Date().toISOString().split('T')[0];
             rowsContainer.innerHTML = '';
             for (let i = 1; i <= 3; i++) {
-                rowsContainer.insertAdjacentHTML('beforeend', createRowHTML(i, todayStr));
+                rowsContainer.insertAdjacentHTML('beforeend', createRowHTML(i));
             }
             reindexRows();
+            setWeekDateRange();
         };
 
-        // Nút bấm Mở Modal
+        // Mở Modal
         btnOpenReg?.addEventListener('click', () => {
             initRegisterRows();
             toggleRegModal(true);
         });
 
-        // Thêm dòng mới khi bấm nút "+"
+        // Thêm dòng mới
         btnAddRow?.addEventListener('click', () => {
             if (!rowsContainer) return;
-            const todayStr = new Date().toISOString().split('T')[0];
             const currentCount = rowsContainer.querySelectorAll('.task-row').length;
-            rowsContainer.insertAdjacentHTML('beforeend', createRowHTML(currentCount + 1, todayStr));
+            rowsContainer.insertAdjacentHTML('beforeend', createRowHTML(currentCount + 1));
             reindexRows();
         });
 
-        // Bắt sự kiện xóa dòng (Ủy quyền sự kiện)
+        // Xóa dòng
         rowsContainer?.addEventListener('click', (e) => {
             const btnRemove = e.target.closest('.btn-remove-row');
             if (btnRemove) {
@@ -523,23 +548,24 @@ export const TaskListComponent = {
         btnCloseReg?.addEventListener('click', () => toggleRegModal(false));
         btnCancelReg?.addEventListener('click', () => toggleRegModal(false));
 
-        // Submit form đăng ký nhiều công việc
+        // Submit form đăng ký
         regForm?.addEventListener('submit', (e) => {
             e.preventDefault();
+            const commonStart = document.getElementById('reg-common-start')?.value;
+            const commonEnd = document.getElementById('reg-common-end')?.value;
+
             const rows = rowsContainer.querySelectorAll('.task-row');
             const createdTasks = [];
 
             rows.forEach(row => {
                 const title = row.querySelector('.reg-row-title')?.value?.trim();
-                const startDate = row.querySelector('.reg-row-start-date')?.value;
-                const deadline = row.querySelector('.reg-row-deadline')?.value;
 
-                if (title && deadline) {
+                if (title) {
                     createdTasks.push({
                         title: title,
-                        description: `Đăng ký công việc từ ${startDate || '---'} đến ${deadline}`,
-                        start_date: startDate,
-                        deadline: deadline,
+                        description: `Đăng ký công việc tuần (${commonStart || '---'} đến ${commonEnd || '---'})`,
+                        start_date: commonStart,
+                        deadline: commonEnd,
                         assigneeName: currentUser?.fullName || currentUser?.name || 'Nhân viên đăng ký',
                         departmentName: currentUser?.departmentName || 'Phòng Hành chính – Tài vụ',
                         status: 'CHO_DUYET',
